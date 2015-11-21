@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using coynesolutions.treeupload;
 
 namespace treeupload
 {
@@ -10,6 +7,9 @@ namespace treeupload
     {
         static void Main(string[] args)
         {
+            var x = new SmugMugUploader();
+            Console.WriteLine(x.NickName);
+            Console.ReadKey();
         }
     }
 }
