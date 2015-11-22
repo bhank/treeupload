@@ -6,39 +6,52 @@ namespace coynesolutions.treeupload
 {
     public class SmugMugFolder : IFolder
     {
-        private string nodeid;
-        private dynamic nodeJson;
+        private readonly dynamic nodeJson;
 
         public SmugMugFolder(dynamic folderData)
         {
             nodeJson = folderData;
         }
 
-        public static SmugMugFolder LoadFromNodeId(string nodeid)
+        public static SmugMugFolder LoadFromNodeUri(string nodeUri)
         {
-            var nodeJson = SmugMugUploader.RequestJson("/node/{0}?_verbosity=1", nodeid).Response.Node;
+            var nodeJson = SmugMugUploader.RequestJson(nodeUri).Response.Node;
             return new SmugMugFolder(nodeJson);
         }
 
         private dynamic ChildrenJson
         {
-            get { return new Lazy<dynamic>(() => SmugMugUploader.RequestJson("/node/{0}!children?_verbosity=1&count=100000", NodeID)).Value.Response.Node; }
+            get { return new Lazy<dynamic>(() => SmugMugUploader.RequestJson(ChildNodesUri + "?_verbosity=1&count=100000")).Value.Response.Node; }
+        }
+
+        private dynamic AlbumJson
+        {
+            get { return new Lazy<dynamic>(() => SmugMugUploader.RequestJson(AlbumUri + "?_verbosity=1")).Value.Response.Album; }
         }
 
         private dynamic ImagesJson
         {
-            get { return new Lazy<dynamic>(() => SmugMugUploader.RequestJson("/album/{0}!images?_verbosity=1&count=100000", NodeID)).Value.Response.AlbumImage; }
+            get
+            {
+                //return new Lazy<dynamic>(() => SmugMugUploader.RequestJson(AlbumUri +  "!images?_verbosity=1&count=100000")).Value.Response.AlbumImage;
+                return new Lazy<dynamic>(() => SmugMugUploader.RequestJson(AlbumImagesUri +  "?_verbosity=1&count=100000")).Value.Response.AlbumImage;
+            }
         }
 
         public string Name { get { return nodeJson.Name; }  }
         public string Type { get { return nodeJson.Type; }  }
+        public bool HasChildren { get { return nodeJson.HasChildren; }  }
         public string NodeID { get { return nodeJson.NodeID; }  }
+        public string ChildNodesUri { get { return (string)nodeJson.Uris.ChildNodes; } }
+        public string AlbumUri { get { return nodeJson.Uris.Album; } }
+        public string AlbumImagesUri { get { return AlbumJson.Uris.AlbumImages; } }
+
 
         public IEnumerable<IFolder> SubFolders
         {
             get
             {
-                if (Type == "Folder")
+                if (HasChildren)
                 {
                     foreach (var childNode in ChildrenJson)
                     {

@@ -49,7 +49,7 @@ namespace coynesolutions.treeupload
 
         private dynamic AuthUserResponse
         {
-            get { return new Lazy<dynamic>(() => RequestJson("!authuser?_filter=NickName&_filteruri=Node&_verbosity=1")).Value.Response.User; }
+            get { return new Lazy<dynamic>(() => RequestJson("/api/v2!authuser?_filter=NickName&_filteruri=Node&_verbosity=1")).Value.Response.User; }
         }
 
         public string NickName
@@ -64,17 +64,20 @@ namespace coynesolutions.treeupload
                 return new Lazy<IFolder>(() =>
                 {
                     string nodeUri = AuthUserResponse.Uris.Node;
-                    var nodeid = Path.GetFileName(nodeUri);
-                    return SmugMugFolder.LoadFromNodeId(nodeid);
+                    return SmugMugFolder.LoadFromNodeUri(nodeUri + "?_verbosity=1");
                 }).Value;
 
             }
         }
 
-        private const string BaseUrl = "https://api.smugmug.com/api/v2";
+        private const string BaseUrl = "https://api.smugmug.com";
 
         public static dynamic RequestJson(string urlFormat, params object[] args)
         {
+            if (!urlFormat.Contains("_verbosity=1"))
+            {
+                throw new Exception("Not verbose enough for me...");
+            }
             var url = BaseUrl + string.Format(urlFormat, args);
             var request = (HttpWebRequest) WebRequest.Create(url);
             request.Accept = "application/json";
