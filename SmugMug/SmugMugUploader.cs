@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using Newtonsoft.Json;
@@ -48,19 +49,24 @@ namespace coynesolutions.treeupload
 
         private dynamic AuthUserResponse
         {
-            get { return new Lazy<dynamic>(() => RequestJson("!authuser?_filter=NickName&_filteruri=Node&_verbosity=1")).Value; }
+            get { return new Lazy<dynamic>(() => RequestJson("!authuser?_filter=NickName&_filteruri=Node&_verbosity=1")).Value.Response.User; }
         }
 
         public string NickName
         {
-            get { return AuthUserResponse.Response.User.NickName; }
+            get { return AuthUserResponse.NickName; }
         }
 
         public IFolder RootFolder
         {
             get
             {
-                return new Lazy<IFolder>(() => new SmugMugFolder(Path.GetFileName(AuthUserResponse.Response.User.Uris.Node))).Value;
+                return new Lazy<IFolder>(() =>
+                {
+                    string nodeUri = AuthUserResponse.Uris.Node;
+                    var nodeid = Path.GetFileName(nodeUri);
+                    return SmugMugFolder.LoadFromNodeId(nodeid);
+                }).Value;
 
             }
         }
@@ -73,10 +79,12 @@ namespace coynesolutions.treeupload
             var request = (HttpWebRequest) WebRequest.Create(url);
             request.Accept = "application/json";
             request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, "GET"));
+            Debug.WriteLine(url);
             var response = (HttpWebResponse) request.GetResponse();
             using (var reader = new StreamReader(response.GetResponseStream()))
             {
                 var responseJson = reader.ReadToEnd();
+                Debug.WriteLine(JsonHelper.FormatJson(responseJson));
                 return JsonConvert.DeserializeObject(responseJson);
             }
         }

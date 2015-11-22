@@ -2,7 +2,7 @@
 {
     public interface IImage
     {
-        string Name { get; }
+        string FileName { get; }
         // exif, tags, size? hash?
     }
 }

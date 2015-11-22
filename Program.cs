@@ -8,7 +8,15 @@ namespace treeupload
         static void Main(string[] args)
         {
             var x = new SmugMugUploader();
-            Console.WriteLine(x.NickName);
+
+            foreach (var folder in x.RootFolder.SubFolders)
+            {
+                Console.WriteLine(folder.Name);
+                foreach (var subfolder in folder.SubFolders)
+                {
+                    Console.WriteLine("\t" + subfolder.Name + "\t" + ((SmugMugFolder)subfolder).Type);
+                }
+            }
             Console.ReadKey();
         }
     }

@@ -1,34 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
+using coynesolutions.treeupload.SmugMug;
 
 namespace coynesolutions.treeupload
 {
     public class SmugMugFolder : IFolder
     {
         private string nodeid;
-        private Lazy<dynamic> nodeJson; 
+        private dynamic nodeJson;
 
-        public SmugMugFolder(string nodeid, string name = "")
+        public SmugMugFolder(dynamic folderData)
         {
-            this.nodeid = nodeid;
-            nodeJson = new Lazy<dynamic>(() => SmugMugUploader.RequestJson("node/{0}!children", this.nodeid));
+            nodeJson = folderData;
         }
 
-        private dynamic NodeJson
+        public static SmugMugFolder LoadFromNodeId(string nodeid)
         {
-            get { return nodeJson.Value; }
+            var nodeJson = SmugMugUploader.RequestJson("/node/{0}?_verbosity=1", nodeid).Response.Node;
+            return new SmugMugFolder(nodeJson);
         }
 
-        public string Name { get { return NodeJson.Name; }  }
+        private dynamic ChildrenJson
+        {
+            get { return new Lazy<dynamic>(() => SmugMugUploader.RequestJson("/node/{0}!children?_verbosity=1&count=100000", NodeID)).Value.Response.Node; }
+        }
+
+        private dynamic ImagesJson
+        {
+            get { return new Lazy<dynamic>(() => SmugMugUploader.RequestJson("/album/{0}!images?_verbosity=1&count=100000", NodeID)).Value.Response.AlbumImage; }
+        }
+
+        public string Name { get { return nodeJson.Name; }  }
+        public string Type { get { return nodeJson.Type; }  }
+        public string NodeID { get { return nodeJson.NodeID; }  }
 
         public IEnumerable<IFolder> SubFolders
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                if (Type == "Folder")
+                {
+                    foreach (var childNode in ChildrenJson)
+                    {
+                        yield return new SmugMugFolder(childNode);
+                    }
+                }
+            }
         }
 
         public IEnumerable<IImage> Images
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                if (Type == "Album")
+                {
+                    foreach (var image in ImagesJson)
+                    {
+                        yield return new SmugMugImage(image);
+                    }
+                }
+            }
         }
     }
 }
