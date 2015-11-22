@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
@@ -20,6 +21,15 @@ namespace coynesolutions.treeupload
         private const string AccessTokenUrl = "http://api.smugmug.com/services/oauth/1.0a/getAccessToken";
 
         private static Manager OAuthManager = new Manager(ApiKey,ApiSecret,OAuthToken,OAuthSecret);
+
+        private Lazy<dynamic> authUserJsonLazy;
+        private Lazy<IFolder> rootFolderLazy;
+
+        public SmugMugUploader()
+        {
+            authUserJsonLazy = new Lazy<dynamic>(() => RequestJson("/api/v2!authuser?_filter=NickName&_filteruri=Node&_verbosity=1"));
+            rootFolderLazy = new Lazy<IFolder>(() => SmugMugFolder.LoadFromNodeUri((string)AuthUserJson.Uris.Node + "?_verbosity=1"));
+        }
 
         public bool LogIn()
         {
@@ -47,30 +57,27 @@ namespace coynesolutions.treeupload
             throw new NotImplementedException();
         }
 
-        private dynamic AuthUserResponse
+        private dynamic AuthUserJson
         {
-            get { return new Lazy<dynamic>(() => RequestJson("/api/v2!authuser?_filter=NickName&_filteruri=Node&_verbosity=1")).Value.Response.User; }
+            get { return authUserJsonLazy.Value.Response.User; }
         }
 
         public string NickName
         {
-            get { return AuthUserResponse.NickName; }
+            get { return AuthUserJson.NickName; }
         }
 
         public IFolder RootFolder
         {
             get
             {
-                return new Lazy<IFolder>(() =>
-                {
-                    string nodeUri = AuthUserResponse.Uris.Node;
-                    return SmugMugFolder.LoadFromNodeUri(nodeUri + "?_verbosity=1");
-                }).Value;
+                return rootFolderLazy.Value;
 
             }
         }
 
         private const string BaseUrl = "https://api.smugmug.com";
+        private static HashSet<string> urlsSeen = new HashSet<string>();
 
         public static dynamic RequestJson(string urlFormat, params object[] args)
         {
@@ -79,6 +86,14 @@ namespace coynesolutions.treeupload
                 throw new Exception("Not verbose enough for me...");
             }
             var url = BaseUrl + string.Format(urlFormat, args);
+            if (urlsSeen.Contains(url))
+            {
+                Debug.WriteLine("DUPE URL! " + url);
+            }
+            else
+            {
+                urlsSeen.Add(url);
+            }
             var request = (HttpWebRequest) WebRequest.Create(url);
             request.Accept = "application/json";
             request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, "GET"));
@@ -87,9 +102,14 @@ namespace coynesolutions.treeupload
             using (var reader = new StreamReader(response.GetResponseStream()))
             {
                 var responseJson = reader.ReadToEnd();
-                Debug.WriteLine(JsonHelper.FormatJson(responseJson));
+                //Debug.WriteLine(JsonHelper.FormatJson(responseJson));
                 return JsonConvert.DeserializeObject(responseJson);
             }
+        }
+
+        public string[] SupportedExtensions
+        {
+            get { return new[] {".jpg", ".jpeg", ".gif", ".png", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".mp4", ".flv"}; }
         }
     }
 }
