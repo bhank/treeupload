@@ -85,7 +85,11 @@ namespace coynesolutions.treeupload
                         if (nextFolder == null)
                         {
                             // create new one inside folder?
-                            throw new NotImplementedException();
+                            nextFolder = currentFolder.CreateSubFolder(relativeDirectory, true); // TODO: this is totally specific to my config... normally you might want to have node folders with just parts[i] for their names, and leaf albums with either parts[i] or relativeDirectory for their names
+                            // TODO: maybe have a few configurable options...
+                            // my smugmug style, where it's always folder/category "tldname", album "tldname\dirname[\dirname]" (except one level deeper under "Other People"!)
+                            // albums for directories containing images, otherwise folders
+                            // folders for all directories; extra albums (maybe with the full relativePath as their name) inside of those containing images
                         }
                         currentFolder = nextFolder;
                         if (currentFolder.Name == relativeDirectory)
