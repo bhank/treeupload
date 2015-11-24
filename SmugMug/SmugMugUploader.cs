@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using Newtonsoft.Json;
 using OAuth;
 
@@ -20,6 +21,8 @@ namespace coynesolutions.treeupload
         private const string UserAuthorizationUrl = "http://api.smugmug.com/services/oauth/1.0a/authorize";
         private const string AccessTokenUrl = "http://api.smugmug.com/services/oauth/1.0a/getAccessToken";
 
+        private const string UploadUrl = "http://upload.smugmug.com/";
+
         private static Manager OAuthManager = new Manager(ApiKey,ApiSecret,OAuthToken,OAuthSecret);
 
         private Lazy<dynamic> authUserJsonLazy;
@@ -33,6 +36,8 @@ namespace coynesolutions.treeupload
 
         public bool LogIn()
         {
+            // TODO: enable initial OAuth request and all
+
             throw new NotImplementedException();
             //if (string.IsNullOrEmpty(ApiKey))
             //{
@@ -111,5 +116,71 @@ namespace coynesolutions.treeupload
         {
             get { return new[] {".jpg", ".jpeg", ".gif", ".png", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".mp4", ".flv"}; }
         }
+
+        public void Upload(string file, IFolder folder)
+        {
+            var albumUri = ((SmugMugFolder) folder).AlbumUri;
+            var fileInfo = new FileInfo(file);
+
+            var request = (HttpWebRequest) WebRequest.Create(UploadUrl);
+            request.Method = "POST";
+            //request.Method = "PUT"; // maybe? nope...
+            //request.Accept = "application/json";
+            //request.ContentLength = fileInfo.Length;
+
+            request.ReadWriteTimeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds
+            request.Timeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds
+            request.KeepAlive = false;
+
+
+            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(UploadUrl, request.Method));
+            //request.Headers.Add("Content-MD5", GetMd5(file));
+            request.Headers.Add("X-Smug-Version", "v2");
+            request.Headers.Add("X-Smug-ResponseType", "JSON");
+            request.Headers.Add("X-Smug-AlbumUri", albumUri);
+            request.Headers.Add("X-Smug-FileName", fileInfo.Name);
+
+            Debug.WriteLine("{0} - uploading {1} ({2} bytes)", UploadUrl, file, fileInfo.Length);
+
+            using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, 0x2000))
+            {
+                using (var requestStream = request.GetRequestStream())
+                {
+                    fileStream.CopyTo(requestStream); // TODO: it would be cool to show progress here... time countdown and all
+                    requestStream.Close();
+                }
+            }
+
+            Debug.WriteLine("Upload complete -- getting response");
+
+            var response = (HttpWebResponse) request.GetResponse();
+            using (var reader = new StreamReader(response.GetResponseStream()))
+            {
+                var responseJson = reader.ReadToEnd();
+                dynamic responseData = JsonConvert.DeserializeObject(responseJson);
+                if (responseData.stat == "ok")
+                {
+                    Debug.WriteLine("Upload succeeded");
+                }
+                else
+                {
+                    // http://dgrin.com/showthread.php?t=253383 - bad permissions for the app (from the initial oauth request) will cause it to fail with code 5, message "system error"
+                    Debug.WriteLine("WARNING: Upload failed!");
+                    Debug.WriteLine(JsonHelper.FormatJson(responseJson));
+                }
+            }
+        }
+
+        private static string GetMd5(string file)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(file))
+                {
+                    return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-","").ToLower();
+                }
+            }
+        }
+
     }
 }
