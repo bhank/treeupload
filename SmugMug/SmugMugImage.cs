@@ -2,15 +2,15 @@
 
 namespace coynesolutions.treeupload.SmugMug
 {
-    public class SmugMugImage : IImage
+    public class SmugMugImage : SmugMugBase, IImage
     {
         private readonly dynamic albumImageData;
-        private Lazy<dynamic> metadataJsonLazy;
+        private readonly Lazy<dynamic> metadataJsonLazy;
 
         public SmugMugImage(dynamic albumImageData)
         {
             this.albumImageData = albumImageData;
-            metadataJsonLazy = new Lazy<dynamic>(() => SmugMugUploader.RequestJson(MetadataUri + "?_verbosity=1"));
+            metadataJsonLazy = new Lazy<dynamic>(() => RequestJson(MetadataUri + "?_verbosity=1"));
         }
 
         public string FileName

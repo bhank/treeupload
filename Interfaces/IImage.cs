@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace coynesolutions.treeupload
+namespace coynesolutions.treeupload.SmugMug
 {
     public interface IImage
     {

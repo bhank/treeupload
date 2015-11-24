@@ -54,6 +54,7 @@
     <Compile Include="OAuth.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SmugMug\SmugMugBase.cs" />
     <Compile Include="SmugMug\SmugMugFolder.cs" />
     <Compile Include="SmugMug\SmugMugImage.cs" />
     <Compile Include="SmugMug\SmugMugUploader.cs" />

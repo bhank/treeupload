@@ -4,10 +4,9 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using coynesolutions.treeupload;
+using coynesolutions.treeupload.SmugMug;
 
-namespace treeupload
+namespace coynesolutions.treeupload
 {
     class Program
     {
@@ -65,6 +64,8 @@ namespace treeupload
                     }
                     if (!uploader.RootFolder.SubFolders.Any(f => f.Name == parts[0]))
                     {
+                        // TODO: abstract out my silly folder logic and maybe make it customizable
+
                         const string DefaultFolderName = "Other"; // move this to SmugMugUploader? Config setting
                         if (!uploader.RootFolder.SubFolders.Any(f => f.Name == DefaultFolderName))
                         {
@@ -142,20 +143,21 @@ namespace treeupload
                 else
                 {
                     // upload it?
-                    uploader.Upload(file, folder);
+                    //uploader.Upload(file, folder);
+                    folder.Upload(file);
                 }
             }
         }
 
-        private static string GetMd5(string file)
-        {
-            using (var md5 = MD5.Create())
-            {
-                using (var stream = File.OpenRead(file))
-                {
-                    return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-","").ToLower();
-                }
-            }
-        }
+        //private static string GetMd5(string file)
+        //{
+        //    using (var md5 = MD5.Create())
+        //    {
+        //        using (var stream = File.OpenRead(file))
+        //        {
+        //            return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-","").ToLower();
+        //        }
+        //    }
+        //}
     }
 }

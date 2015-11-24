@@ -2,26 +2,25 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using coynesolutions.treeupload.SmugMug;
 
-namespace coynesolutions.treeupload
+namespace coynesolutions.treeupload.SmugMug
 {
-    public class SmugMugFolder : IFolder
+    public class SmugMugFolder : SmugMugBase, IFolder
     {
         private readonly dynamic nodeJson;
-        private Lazy<dynamic> childrenJsonLazy;
-        private Lazy<dynamic> albumJsonLazy;
-        private Lazy<dynamic> imagesJsonLazy;
-        private Lazy<IEnumerable<IFolder>> subfoldersLazy;
-        private Lazy<IEnumerable<IImage>> imagesLazy;
+        private readonly Lazy<dynamic> childrenJsonLazy;
+        private readonly Lazy<dynamic> albumJsonLazy;
+        private readonly Lazy<dynamic> imagesJsonLazy;
+        private readonly Lazy<IEnumerable<IFolder>> subfoldersLazy;
+        private readonly Lazy<IEnumerable<IImage>> imagesLazy;
 
-        public SmugMugFolder(dynamic folderData)
+        private SmugMugFolder(dynamic folderData)
         {
             nodeJson = folderData;
             Debug.WriteLine("new SmugMugFolder: " + ToString());
-            childrenJsonLazy = new Lazy<dynamic>(() => SmugMugUploader.RequestJson(ChildNodesUri + "?_verbosity=1&count=100000"));
-            albumJsonLazy = new Lazy<dynamic>(() => SmugMugUploader.RequestJson(AlbumUri + "?_verbosity=1"));
-            imagesJsonLazy = new Lazy<dynamic>(() => SmugMugUploader.RequestJson(AlbumImagesUri + "?_verbosity=1&count=100000"));
+            childrenJsonLazy = new Lazy<dynamic>(() => RequestJson(ChildNodesUri + "?_verbosity=1&count=100000"));
+            albumJsonLazy = new Lazy<dynamic>(() => RequestJson(AlbumUri + "?_verbosity=1"));
+            imagesJsonLazy = new Lazy<dynamic>(() => RequestJson(AlbumImagesUri + "?_verbosity=1&count=100000"));
             subfoldersLazy = new Lazy<IEnumerable<IFolder>>(() =>
             {
                 if (!HasChildren)
@@ -46,7 +45,7 @@ namespace coynesolutions.treeupload
 
         public static SmugMugFolder LoadFromNodeUri(string nodeUri)
         {
-            var nodeJson = SmugMugUploader.RequestJson(nodeUri).Response.Node;
+            var nodeJson = RequestJson(nodeUri).Response.Node;
             return new SmugMugFolder(nodeJson);
         }
 
@@ -87,7 +86,24 @@ namespace coynesolutions.treeupload
             get { return imagesLazy.Value; }
         }
 
-        public override string ToString()
+        public bool Upload(string file)
+        {
+            return Upload(file, this);
+        }
+
+        public IFolder CreateSubFolder(string name, bool hasImages)
+        {
+            var newFolderData = new
+            {
+                Name = name,
+                Type = hasImages ? "Album" : "Folder",
+            };
+            var response = PostJson(newFolderData, ChildNodesUri);
+            // TODO: deal with failure
+            return new SmugMugFolder(response);
+        }
+
+        public override sealed string ToString() // just for debugging. only sealed because it's called in the constructor.
         {
             return string.Format("{0} [{1}]", Name, NodeID);
         }
