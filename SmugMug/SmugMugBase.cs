@@ -46,7 +46,7 @@ namespace coynesolutions.treeupload.SmugMug
             }
             var request = (HttpWebRequest) WebRequest.Create(url);
             request.Accept = "application/json";
-            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, "GET"));
+            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, request.Method));
             Debug.WriteLine(url);
             var response = (HttpWebResponse) request.GetResponse();
             using (var reader = new StreamReader(response.GetResponseStream()))
@@ -66,7 +66,7 @@ namespace coynesolutions.treeupload.SmugMug
             request.Method = "POST";
             request.Accept = "application/json";
             request.ContentType = "application/json";
-            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, "GET"));
+            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, request.Method));
 
             using (var writer = new StreamWriter(request.GetRequestStream()))
             {
