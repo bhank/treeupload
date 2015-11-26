@@ -19,6 +19,9 @@ namespace coynesolutions.treeupload
 
         private static void Test()
         {
+            Trace.Listeners.Add(new ConsoleTraceListener());
+            Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
+
             var uploader = new SmugMugUploader();
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
             var folderToUpload = Path.Combine(rootImagesFolder, "temp");
@@ -36,17 +39,17 @@ namespace coynesolutions.treeupload
                 {
                     continue;
                 }
-                Debug.WriteLine(file);
+                Trace.WriteLine(file);
                 var directory = Path.GetDirectoryName(file);
                 if (directory != lastDirectory)
                 {
                     // clean up from last directory
                     if (albumImages != null && albumImages.Count > 0)
                     {
-                        Console.WriteLine("WARNING: Extra images in album " + folder.Name);
+                        Trace.WriteLine("WARNING: Extra images in album " + folder.Name);
                         foreach (var extra in albumImages.Keys)
                         {
-                            Console.WriteLine("\t" + extra);
+                            Trace.WriteLine("\t" + extra);
                         }
                         albumImages.Clear(); // not really necessary since it's reassigned below, but no point in keeping this around
                     }
@@ -98,7 +101,7 @@ namespace coynesolutions.treeupload
                         }
                     }
                     folder = currentFolder;
-                    Console.WriteLine(directory + "\t->\t" + folder.Name);
+                    Trace.WriteLine(directory + "\t->\t" + folder.Name);
 
                     // do stuff... check and see if the album exists and so forth
                     lastDirectory = directory;
@@ -108,10 +111,10 @@ namespace coynesolutions.treeupload
                     var duplicateFilenames = imagesByFilename.Where(g => g.Count() > 1).ToArray();
                     if (duplicateFilenames.Any())
                     {
-                        Console.WriteLine("WARNING: duplicate filenames in album " + folder.Name);
+                        Trace.WriteLine("WARNING: duplicate filenames in album " + folder.Name);
                         foreach (var dupe in duplicateFilenames.Select(g => g.Key))
                         {
-                            Console.WriteLine("\t" + dupe);
+                            Trace.WriteLine("\t" + dupe);
                         }
                     }
                     // make a list of filenames. we'll take out each one as we see it, and any left over are extra, in the album but not on disk.
