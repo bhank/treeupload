@@ -84,7 +84,11 @@ namespace coynesolutions.treeupload
                     var currentFolder = uploader.RootFolder;
                     for (var i = 0; i < parts.Length; i++)
                     {
-                        var nextFolder = currentFolder.SubFolders.SingleOrDefault(f => f.Name == parts[i] || f.Name == string.Join("\\", parts.Take(i + 1)) || f.Name == relativeDirectory);
+                        var nextFolder = currentFolder.SubFolders.SingleOrDefault(f => f.Name == relativeDirectory);
+                        if (nextFolder == null)
+                        {
+                            nextFolder = currentFolder.SubFolders.SingleOrDefault(f => f.Name == parts[i] || f.Name == string.Join("\\", parts.Take(i + 1)));
+                        }
                         if (nextFolder == null)
                         {
                             // create new one inside folder?
