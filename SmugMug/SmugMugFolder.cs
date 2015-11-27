@@ -2,25 +2,32 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Mime;
+using System.Text.RegularExpressions;
 
 namespace coynesolutions.treeupload.SmugMug
 {
     public class SmugMugFolder : SmugMugBase, IFolder
     {
         private readonly dynamic nodeJson;
-        private readonly Lazy<dynamic> childrenJsonLazy;
+        private Lazy<dynamic> childrenJsonLazy;
         private readonly Lazy<dynamic> albumJsonLazy;
-        private readonly Lazy<dynamic> imagesJsonLazy;
-        private readonly Lazy<IEnumerable<IFolder>> subfoldersLazy;
-        private readonly Lazy<IEnumerable<IImage>> imagesLazy;
+        private Lazy<dynamic> imagesJsonLazy;
+        private Lazy<IEnumerable<IFolder>> subfoldersLazy;
+        private Lazy<IEnumerable<IImage>> imagesLazy;
 
         private SmugMugFolder(dynamic folderData)
         {
             nodeJson = folderData;
             Debug.WriteLine("new SmugMugFolder: " + ToString());
-            childrenJsonLazy = new Lazy<dynamic>(() => RequestJson(ChildNodesUri + "?_verbosity=1&count=100000"));
             albumJsonLazy = new Lazy<dynamic>(() => RequestJson(AlbumUri + "?_verbosity=1"));
-            imagesJsonLazy = new Lazy<dynamic>(() => RequestJson(AlbumImagesUri + "?_verbosity=1&count=100000"));
+            ResetChildrenLazy();
+            ResetImagesLazy();
+        }
+
+        private void ResetChildrenLazy()
+        {
+            childrenJsonLazy = new Lazy<dynamic>(() => RequestJson(ChildNodesUri + "?_verbosity=1&count=100000"));
             subfoldersLazy = new Lazy<IEnumerable<IFolder>>(() =>
             {
                 if (!HasChildren)
@@ -29,17 +36,23 @@ namespace coynesolutions.treeupload.SmugMug
                 }
                 return ((IEnumerable<dynamic>) ChildrenJson).Select(d => new SmugMugFolder(d)).ToArray();
             });
+        }
+
+        private void ResetImagesLazy()
+        {
+            imagesJsonLazy = new Lazy<dynamic>(() => RequestJson(AlbumImagesUri + "?_verbosity=1&count=100000"));
             imagesLazy = new Lazy<IEnumerable<IImage>>(() =>
             {
                 if (Type != "Album")
                 {
                     return Enumerable.Empty<IImage>();
                 }
-                return ((IEnumerable<dynamic>) ImagesJson).Select(d => new SmugMugImage(d)).ToArray();
-                //foreach (var image in ImagesJson)
-                //{
-                //    yield return new SmugMugImage(image);
-                //}
+                var imagesJson = (IEnumerable<dynamic>) ImagesJson;
+                if (imagesJson == null)
+                {
+                    return Enumerable.Empty<IImage>();
+                }
+                return imagesJson.Select(d => new SmugMugImage(d)).ToArray();
             });
         }
 
@@ -74,6 +87,7 @@ namespace coynesolutions.treeupload.SmugMug
         public string ChildNodesUri { get { return (string)nodeJson.Uris.ChildNodes; } }
         public string AlbumUri { get { return nodeJson.Uris.Album; } }
         public string AlbumImagesUri { get { return AlbumJson.Uris.AlbumImages; } }
+        public string SortAlbumImagesUri { get { return AlbumJson.Uris.SortAlbumImages; } }
 
 
         public IEnumerable<IFolder> SubFolders
@@ -96,11 +110,108 @@ namespace coynesolutions.treeupload.SmugMug
             var newFolderData = new
             {
                 Name = name,
+                UrlName = name.Replace(" ", "-").Replace("\\", "-"), // TODO: remove all other url-unfriendly characters
                 Type = hasImages ? "Album" : "Folder",
             };
-            var response = PostJson(newFolderData, ChildNodesUri);
-            // TODO: deal with failure
-            return new SmugMugFolder(response);
+            var responseJson = PostJson(newFolderData, ChildNodesUri + "?_verbosity=1");
+            if (responseJson.Message != "Created")
+            {
+                throw new Exception("Unexpected response message: " + responseJson.Message);
+            }
+            ResetChildrenLazy(); // so subfolders will refresh when next accessed, and include this new folder
+            return new SmugMugFolder(responseJson.Response.Node);
+        }
+
+        private class ImageSortComparer : IComparer<IImage>
+        {
+            private static readonly Lazy<ImageSortComparer> InstanceLazy = new Lazy<ImageSortComparer>(() => new ImageSortComparer());
+            public static ImageSortComparer Instance
+            {
+                get { return InstanceLazy.Value; }
+            }
+
+            private static readonly Regex fileNumberRegex = new Regex(@"^(?:MVI_|IMG_|DSCN|P)(\d+)\.[A-Z0-9]{3}$", RegexOptions.Compiled);
+            public int Compare(IImage x, IImage y)
+            {
+                var matchX = fileNumberRegex.Match(x.FileName);
+                if (matchX.Success)
+                {
+                    var matchY = fileNumberRegex.Match(y.FileName);
+                    if (matchY.Success)
+                    {
+                        var fileNumberX = int.Parse(matchX.Groups[1].Value);
+                        var fileNumberY = int.Parse(matchY.Groups[1].Value);
+                        return fileNumberX.CompareTo(fileNumberY);
+                    }
+                }
+
+                DateTime dateTimeX, dateTimeY;
+                if (x.ExifDateTime.HasValue && y.ExifDateTime.HasValue)
+                {
+                    return DateTime.Compare(x.ExifDateTime.Value, y.ExifDateTime.Value);
+                }
+                return string.Compare(x.FileName, y.FileName, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        public void Sort()
+        {
+            ResetImagesLazy();
+            var currentOrderImagesWithIndexes = Images.Cast<SmugMugImage>().Select((image, index) => new {image, index}).ToList();
+            var sortedImages = Images.Cast<SmugMugImage>().OrderBy(i => i, ImageSortComparer.Instance).ToList();
+            //var sortedImages = Images.Cast<SmugMugImage>().OrderBy(i => Guid.NewGuid()).ToList(); // random sort for testing
+
+            //Trace.WriteLine("------------- new order ------------");
+            //foreach (var i in sortedImages)
+            //{
+            //    Debug.WriteLine(i.FileName);
+            //}
+
+
+            var needsSort = currentOrderImagesWithIndexes.Any(c => sortedImages[c.index].ImageUri != c.image.ImageUri);
+            if (!needsSort)
+            {
+                Trace.WriteLine("Already sorted.");
+                return;
+            }
+
+            //// TODO: go through and move images into order as necessary...
+            //// maybe rearrange the local collection as I go, so I think I know the order on the server
+            //var localImages = Images.Cast<SmugMugImage>().ToList();
+
+            //for (var n = 0; n < sortedImages.Count; n++)
+            //{
+            //    if (localImages[n].ImageUri != sortedImages[n].ImageUri)
+            //    {
+            //        var sortedPosition = sortedImages.FindIndex(i => i.ImageUri == localImages[n].ImageUri);
+
+            //    }
+            //}
+
+            // Try and cheat to make it easy -- specify the order of all of them, and move them all before the first.
+            //var commaDelimitedAlbumImageUris = sortedImages[0].AlbumImageUri;// string.Join(",", sortedImages.Select(i => i.AlbumImageUri));
+            // moving one at a time seems to work.
+            // maybe it doesn't like having the target Uri in the MoveUris? It doesn't seem to really move them.
+            var commaDelimitedAlbumImageUris = string.Join(",", sortedImages.Take(sortedImages.Count - 1).Select(i => i.AlbumImageUri));
+            // yup, seems to work.
+            
+            var moveData = new
+            {
+                MoveLocation = "Before",
+                MoveUris = commaDelimitedAlbumImageUris,
+                Uri = sortedImages.Last().AlbumImageUri, // currentOrderImagesWithIndexes[0].image.AlbumImageUri,
+            };
+            var responseJson = PostJson(moveData, SortAlbumImagesUri + "?_verbosity=1");
+            // TODO: check for failure
+
+            ResetImagesLazy(); // reload list of images so it loads the new order from the server
+            // maybe compare against that order to make sure it matches what I think it should be 
+            currentOrderImagesWithIndexes = Images.Cast<SmugMugImage>().Select((image, index) => new {image, index}).ToList();
+            needsSort = currentOrderImagesWithIndexes.Any(c => sortedImages[c.index].ImageUri != c.image.ImageUri);
+            if (needsSort)
+            {
+                throw new Exception("Still needs sort after sorting!");
+            }
         }
 
         public override sealed string ToString() // just for debugging. only sealed because it's called in the constructor.

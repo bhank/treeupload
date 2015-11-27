@@ -39,13 +39,15 @@ namespace coynesolutions.treeupload.SmugMug
         }
 
         public string MetadataUri { get { return (string)albumImageData.Uris.ImageMetadata; } }
+        public string ImageUri { get { return (string)albumImageData.Uris.Image; } }
+        public string AlbumImageUri { get { return (string)albumImageData.Uri; } }
 
         private dynamic MetadataJson
         {
             get { return metadataJsonLazy.Value.Response.ImageMetadata; }
         }
 
-        public DateTime? Date
+        public DateTime? ExifDateTime
         {
             get
             {

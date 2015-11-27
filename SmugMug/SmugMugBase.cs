@@ -59,6 +59,11 @@ namespace coynesolutions.treeupload.SmugMug
 
         protected static dynamic PostJson(object postData, string urlFormat, params object[] args)
         {
+            if (!urlFormat.Contains("_verbosity=1"))
+            {
+                throw new Exception("Not verbose enough for me...");
+            }
+
             var url = BaseUrl + string.Format(urlFormat, args);
             Debug.WriteLine(url);
 

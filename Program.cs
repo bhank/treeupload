@@ -13,24 +13,51 @@ namespace coynesolutions.treeupload
         static void Main(string[] args)
         {
             Test();
+            //TestSort();
             Console.WriteLine("All done. Press a key to exit...");
             Console.ReadKey();
         }
 
+        private static void TestSort()
+        {
+                        Trace.Listeners.Add(new ConsoleTraceListener());
+            Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
+
+            const string otherTempNodeUri = "/api/v2/node/PnHR2K";
+            var folder = SmugMugFolder.LoadFromNodeUri(otherTempNodeUri + "?_verbosity=1");
+            Trace.WriteLine("------------- before ------------");
+            foreach (var i in folder.Images)
+            {
+                Debug.WriteLine(i.FileName);
+            }
+            folder.Sort();
+            Trace.WriteLine("------------- after ------------");
+            foreach (var i in folder.Images)
+            {
+                Debug.WriteLine(i.FileName);
+            }
+        }
+
         private static void Test()
         {
+            const bool dryRun = false; // TODO: make this apply to folder creation too... maybe make it a parameter
             Trace.Listeners.Add(new ConsoleTraceListener());
             Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
 
             var uploader = new SmugMugUploader();
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
-            var folderToUpload = Path.Combine(rootImagesFolder, "temp");
+            var folderToUpload = Path.Combine(rootImagesFolder, "2015"); // upload only from this subdirectory of the rootImagesFolder
+            if (!folderToUpload.StartsWith(rootImagesFolder, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new Exception("Folder to upload must be under ImageFolder!");
+            }
 
             if (string.IsNullOrWhiteSpace(rootImagesFolder) || !Directory.Exists(rootImagesFolder))
             {
                 throw new Exception("Configured images folder does not exist: " + rootImagesFolder);
             }
             string lastDirectory = null;
+            var directoryNeedsSort = false;
             IFolder folder = null;
             Dictionary<string, IImage> albumImages = null;
             foreach (var file in Directory.EnumerateFiles(folderToUpload, "*", SearchOption.AllDirectories))
@@ -52,6 +79,14 @@ namespace coynesolutions.treeupload
                             Trace.WriteLine("\t" + extra);
                         }
                         albumImages.Clear(); // not really necessary since it's reassigned below, but no point in keeping this around
+                    }
+
+                    Trace.WriteLine("directoryNeedsSort? " + directoryNeedsSort);
+                    if (directoryNeedsSort)
+                    {
+                        // TODO: sort the modified album
+                        folder.Sort();
+                        directoryNeedsSort = false;
                     }
 
                     if (!directory.StartsWith(rootImagesFolder))
@@ -155,7 +190,18 @@ namespace coynesolutions.treeupload
                 {
                     // upload it?
                     //uploader.Upload(file, folder);
-                    folder.Upload(file);
+                    if (dryRun)
+                    {
+                        Trace.WriteLine(string.Format("DRY RUN: Would be uploading {0} to {1}", file, folder.Name));
+                    }
+                    else
+                    {
+                        Trace.WriteLine(string.Format("Uploading {0} to {1}", file, folder.Name));
+                        if (folder.Upload(file))
+                        {
+                            directoryNeedsSort = true;
+                        }
+                    }
                 }
             }
         }
