@@ -62,6 +62,8 @@ namespace coynesolutions.treeupload
             Dictionary<string, IImage> albumImages = null;
 
             // Specify actions to be run when we move to a new directory, plus when we are all finished (for the last directory).
+            // I want "access to modified closure" -- that is, I want the latest values of all the variables accessed within this Action-- so I will ignore resharper's warning.
+// ReSharper disable AccessToModifiedClosure
             Action postDirectoryCleanup = () =>
             {
                     // clean up from last directory
@@ -78,11 +80,11 @@ namespace coynesolutions.treeupload
                     Trace.WriteLine("directoryNeedsSort? " + directoryNeedsSort);
                     if (directoryNeedsSort)
                     {
-                        // TODO: sort the modified album
                         folder.Sort();
                         directoryNeedsSort = false;
                     }                
             };
+// ReSharper restore AccessToModifiedClosure
 
             foreach (var file in Directory.EnumerateFiles(folderToUpload, "*", SearchOption.AllDirectories))
             {
