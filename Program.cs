@@ -20,21 +20,27 @@ namespace coynesolutions.treeupload
 
         private static void TestSort()
         {
-                        Trace.Listeners.Add(new ConsoleTraceListener());
+            Trace.Listeners.Add(new ConsoleTraceListener());
             Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
 
-            const string otherTempNodeUri = "/api/v2/node/PnHR2K";
-            var folder = SmugMugFolder.LoadFromNodeUri(otherTempNodeUri + "?_verbosity=1");
-            Trace.WriteLine("------------- before ------------");
-            foreach (var i in folder.Images)
+            //const string otherTempNodeUri = "/api/v2/node/PnHR2K";
+            //var folder = SmugMugFolder.LoadFromNodeUri(otherTempNodeUri + "?_verbosity=1");
+            //Trace.WriteLine("------------- before ------------");
+            //foreach (var i in folder.Images)
+            //{
+            //    Debug.WriteLine(i.FileName);
+            //}
+            //folder.Sort();
+            //Trace.WriteLine("------------- after ------------");
+            //foreach (var i in folder.Images)
+            //{
+            //    Debug.WriteLine(i.FileName);
+            //}
+            var u = new SmugMugUploader();
+            //u.RootFolder.SubFolders.Single(f => f.Name == "2015").SubFolders.Single(f => f.Name == "2015\\20151104").Sort();
+            foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2015").SubFolders.Where(f => f.Name.StartsWith("2015\\20151")))
             {
-                Debug.WriteLine(i.FileName);
-            }
-            folder.Sort();
-            Trace.WriteLine("------------- after ------------");
-            foreach (var i in folder.Images)
-            {
-                Debug.WriteLine(i.FileName);
+                folder.Sort();
             }
         }
 

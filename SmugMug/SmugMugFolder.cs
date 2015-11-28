@@ -202,7 +202,10 @@ namespace coynesolutions.treeupload.SmugMug
                 Uri = sortedImages.Last().AlbumImageUri, // currentOrderImagesWithIndexes[0].image.AlbumImageUri,
             };
             var responseJson = PostJson(moveData, SortAlbumImagesUri + "?_verbosity=1");
-            // TODO: check for failure
+            if (responseJson.Code != 200 || responseJson.Message != "Ok")
+            {
+                throw new Exception("Unexpected response to sort request: " + responseJson.Code + ", " + responseJson.Message);
+            }
 
             ResetImagesLazy(); // reload list of images so it loads the new order from the server
             // maybe compare against that order to make sure it matches what I think it should be 
