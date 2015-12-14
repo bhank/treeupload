@@ -157,5 +157,18 @@ namespace coynesolutions.treeupload.SmugMug
                 }
             }
         }
+
+        protected static string GetUri(dynamic uriJson)
+        {
+            // Handle uris with or without metadata
+            //return (string) (uriJson.Uri ?? uriJson);
+            //return (string) (uriJson.HasValues ? uriJson.Uri : uriJson);
+            var value = uriJson.Value as string;
+            if (value == null)
+            {
+                value = uriJson.Uri.Value as string;
+            }
+            return value;
+        }
     }
 }

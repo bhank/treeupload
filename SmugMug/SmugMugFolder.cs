@@ -80,14 +80,14 @@ namespace coynesolutions.treeupload.SmugMug
             }
         }
 
-        public string Name { get { return nodeJson.Name; }  }
-        public string Type { get { return nodeJson.Type; }  }
-        public bool HasChildren { get { return nodeJson.HasChildren; }  }
-        public string NodeID { get { return nodeJson.NodeID; }  }
-        public string ChildNodesUri { get { return (string)nodeJson.Uris.ChildNodes; } }
-        public string AlbumUri { get { return nodeJson.Uris.Album; } }
-        public string AlbumImagesUri { get { return AlbumJson.Uris.AlbumImages; } }
-        public string SortAlbumImagesUri { get { return AlbumJson.Uris.SortAlbumImages; } }
+        public string Name { get { return (string)nodeJson.Name; }  }
+        public string Type { get { return (string)nodeJson.Type; }  }
+        public bool HasChildren { get { return (bool)nodeJson.HasChildren; }  }
+        public string NodeID { get { return (string)nodeJson.NodeID; }  }
+        public string ChildNodesUri { get { return GetUri(nodeJson.Uris.ChildNodes); } }
+        public string AlbumUri { get { return GetUri(nodeJson.Uris.Album); } }
+        public string AlbumImagesUri { get { return GetUri(AlbumJson.Uris.AlbumImages); } }
+        public string SortAlbumImagesUri { get { return GetUri(AlbumJson.Uris.SortAlbumImages); } }
 
 
         public IEnumerable<IFolder> SubFolders
