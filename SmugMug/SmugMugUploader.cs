@@ -71,9 +71,10 @@ namespace coynesolutions.treeupload.SmugMug
 
         public void RemoveBadKeywords()
         {
-            var topKeywordJson = GetJson(AuthUserUri + "!topkeywords?_verbosity=1");
+            var topKeywordJson = GetJson(AuthUserUri + "!topkeywords?NumKeywords=100000&_verbosity=1");
             var topKeywordArray = (from object x in (IEnumerable)topKeywordJson.Response.UserTopKeywords.TopKeywords select x.ToString()).ToArray();
-            foreach (var badKeyword in topKeywordArray.Where(IsBadKeyword))
+            var badKeywords = topKeywordArray.Where(IsBadKeyword).ToArray();
+            foreach (var badKeyword in badKeywords)
             {
                 // 100 is the max count it will accept. I'll have to do paging.
                 const int itemsPerPage = 100;
