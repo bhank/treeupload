@@ -352,12 +352,12 @@ namespace OAuth
         ///
         /// <returns>A Dictionary containing the set of
         /// parameter names and associated values</returns>
-        private Dictionary<String,String> ExtractQueryParameters(string queryString)
+        private List<KeyValuePair<String,String>> ExtractQueryParameters(string queryString)
         {
             if (queryString.StartsWith("?"))
                 queryString = queryString.Remove(0, 1);
 
-            var result = new Dictionary<String,String>();
+            var result = new List<KeyValuePair<String, String>>();
 
             if (string.IsNullOrEmpty(queryString))
                 return result;
@@ -369,10 +369,10 @@ namespace OAuth
                     if (s.IndexOf('=') > -1)
                     {
                         string[] temp = s.Split('=');
-                        result.Add(temp[0], temp[1]);
+                        result.Add(new KeyValuePair<string, string>(temp[0], temp[1]));
                     }
                     else
-                        result.Add(s, string.Empty);
+                        result.Add(new KeyValuePair<string, string>(s, string.Empty));
                 }
             }
 
@@ -1094,14 +1094,18 @@ namespace OAuth
                     !p1.Key.EndsWith("signature"))
                 {
                     // workitem 15756 - handle non-oob scenarios
-                    p.Add("oauth_" + p1.Key,
-                          (p1.Key == "callback")?UrlEncode(p1.Value) : p1.Value);
+                    if (p.Any(x => x.Key == "oauth_" + p1.Key))
+                    {
+                        throw new Exception("parameter already exists: " + "oauth_" + p1.Key);
+                    }
+                    p.Add(new KeyValuePair<string, string>("oauth_" + p1.Key,
+                          (p1.Key == "callback")?UrlEncode(p1.Value) : p1.Value));
                 }
             }
 
             // concat+format the sorted list of all those params
             var sb1 = new System.Text.StringBuilder();
-            foreach (var item in p.OrderBy(x => x.Key, StringComparer.Ordinal))
+            foreach (var item in p.OrderBy(x => x.Key, StringComparer.Ordinal).ThenBy(x => x.Value, StringComparer.Ordinal))
             {
                 // even "empty" params need to be encoded this way.
                 sb1.AppendFormat("{0}={1}&", item.Key, item.Value);
