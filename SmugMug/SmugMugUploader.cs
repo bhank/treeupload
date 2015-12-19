@@ -76,7 +76,7 @@ namespace coynesolutions.treeupload.SmugMug
             foreach (var badKeyword in topKeywordArray.Where(IsBadKeyword))
             {
                 // 100 is the max count it will accept. I'll have to do paging.
-                const int itemsPerPage = 5; // 100
+                const int itemsPerPage = 100;
                 var items = GetPagedItems(json => json.Response.ImageSearchResult, "/api/v2/image!search?Keywords={0}&Scope={1}&count={2}&_verbosity=1", badKeyword, Uri.EscapeDataString(AuthUserUri), itemsPerPage);
                 //var searchResultJson = GetJson("/api/v2/image!search?Keywords={0}&Scope={1}&count=1000&_verbosity=1", badKeyword, Uri.EscapeDataString(AuthUserUri));
                 foreach (var searchResult in items)
@@ -86,15 +86,25 @@ namespace coynesolutions.treeupload.SmugMug
                     //var imageUri = (string) imageJson.Response.Uri;
 
                     var keywordArray = (from object x in (IEnumerable)searchResult.KeywordArray select x.ToString()).ToArray();
-                    var newKeywords = keywordArray.Where(k => !IsBadKeyword(k)).ToArray(); // remove any other bad keywords too
-                    var patchData = new {KeywordArray = newKeywords};
-                    var patchJson = PatchJson(patchData, (string)searchResult.Uris.Image + "?_verbosity=1"); // that URL will get a redirect after the PATCH, but still work.
-                    // can't parse the response since there isn't one due to the redirect.
-                    //var newKeywordArray = (from object x in (IEnumerable)patchJson.Response.Image.KeywordArray select x.ToString()).ToArray();
-                    //if (newKeywordArray.Any(k => IsBadKeyword(k)))
-                    //{
-                    //    throw new Exception("Still bad keywords!");
-                    //}
+                    if (keywordArray.Length > 0)
+                    {
+                        var newKeywords = keywordArray.Where(k => !IsBadKeyword(k)).ToArray(); // remove any other bad keywords too
+                        if (newKeywords.Length < keywordArray.Length)
+                        {
+                            var patchData = new {KeywordArray = newKeywords};
+                            var patchJson = PatchJson(patchData, (string) searchResult.Uris.Image + "?_verbosity=1"); // that URL will get a redirect after the PATCH, but still work.
+                            // can't parse the response since there isn't one due to the redirect.
+                            //var newKeywordArray = (from object x in (IEnumerable)patchJson.Response.Image.KeywordArray select x.ToString()).ToArray();
+                            //if (newKeywordArray.Any(k => IsBadKeyword(k)))
+                            //{
+                            //    throw new Exception("Still bad keywords!");
+                            //}
+                        }
+                        else
+                        {
+                            // no keywords removed
+                        }
+                    }
                 }
             }
         }
