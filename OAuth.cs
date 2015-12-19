@@ -1101,7 +1101,7 @@ namespace OAuth
 
             // concat+format the sorted list of all those params
             var sb1 = new System.Text.StringBuilder();
-            foreach (KeyValuePair<String,String> item in p.OrderBy(x => x.Key))
+            foreach (var item in p.OrderBy(x => x.Key, StringComparer.Ordinal))
             {
                 // even "empty" params need to be encoded this way.
                 sb1.AppendFormat("{0}={1}&", item.Key, item.Value);
