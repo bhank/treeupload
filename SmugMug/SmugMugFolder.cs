@@ -20,14 +20,14 @@ namespace coynesolutions.treeupload.SmugMug
         {
             nodeJson = folderData;
             Debug.WriteLine("new SmugMugFolder: " + ToString());
-            albumJsonLazy = new Lazy<dynamic>(() => RequestJson(AlbumUri + "?_verbosity=1"));
+            albumJsonLazy = new Lazy<dynamic>(() => GetJson(AlbumUri + "?_verbosity=1"));
             ResetChildrenLazy();
             ResetImagesLazy();
         }
 
         private void ResetChildrenLazy()
         {
-            childrenJsonLazy = new Lazy<dynamic>(() => RequestJson(ChildNodesUri + "?_verbosity=1&count=100000"));
+            childrenJsonLazy = new Lazy<dynamic>(() => GetJson(ChildNodesUri + "?_verbosity=1&count=100000"));
             subfoldersLazy = new Lazy<IEnumerable<IFolder>>(() =>
             {
                 if (!HasChildren)
@@ -40,7 +40,7 @@ namespace coynesolutions.treeupload.SmugMug
 
         private void ResetImagesLazy()
         {
-            imagesJsonLazy = new Lazy<dynamic>(() => RequestJson(AlbumImagesUri + "?_verbosity=1&count=100000"));
+            imagesJsonLazy = new Lazy<dynamic>(() => GetJson(AlbumImagesUri + "?_verbosity=1&count=100000"));
             imagesLazy = new Lazy<IEnumerable<IImage>>(() =>
             {
                 if (Type != "Album")
@@ -58,7 +58,7 @@ namespace coynesolutions.treeupload.SmugMug
 
         public static SmugMugFolder LoadFromNodeUri(string nodeUri)
         {
-            var nodeJson = RequestJson(nodeUri).Response.Node;
+            var nodeJson = GetJson(nodeUri).Response.Node;
             return new SmugMugFolder(nodeJson);
         }
 

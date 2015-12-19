@@ -12,17 +12,25 @@ namespace coynesolutions.treeupload
     {
         static void Main(string[] args)
         {
-            Test();
+            Trace.Listeners.Add(new ConsoleTraceListener());
+            Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
+
+            //Test();
             //TestSort();
+            KeywordTest();
             Console.WriteLine("All done. Press a key to exit...");
             Console.ReadKey();
         }
 
+        private static void KeywordTest()
+        {
+            var uploader = new SmugMugUploader();
+            //uploader.RemoveKeyword("zxcvbnm");
+            uploader.RemoveBadKeywords();
+        }
+
         private static void TestSort()
         {
-            Trace.Listeners.Add(new ConsoleTraceListener());
-            Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
-
             //const string otherTempNodeUri = "/api/v2/node/PnHR2K";
             //var folder = SmugMugFolder.LoadFromNodeUri(otherTempNodeUri + "?_verbosity=1");
             //Trace.WriteLine("------------- before ------------");
@@ -47,8 +55,6 @@ namespace coynesolutions.treeupload
         private static void Test()
         {
             const bool dryRun = false; // TODO: make this apply to folder creation too... maybe make it a parameter
-            Trace.Listeners.Add(new ConsoleTraceListener());
-            Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
 
             var uploader = new SmugMugUploader();
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?

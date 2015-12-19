@@ -29,36 +29,46 @@ namespace coynesolutions.treeupload.SmugMug
         private const string BaseUrl = "https://api.smugmug.com";
         private static readonly HashSet<string> urlsSeen = new HashSet<string>(); // TODO: remove this debugging thing... it'll suck up some memory on huge uploads
 
-        protected static dynamic RequestJson(string urlFormat, params object[] args)
+        protected static dynamic GetJson(string urlFormat, params object[] args)
         {
-            if (!urlFormat.Contains("_verbosity=1"))
+            return MakeRequest("GET", true, false, null, urlFormat, args);
+        }
+
+        protected static dynamic GetJsonWithRedirect(string urlFormat, params object[] args)
+        {
+            return MakeRequest("GET", true, true, null, urlFormat, args);
+        }
+
+        protected static IEnumerable<dynamic> GetPagedItems(Func<dynamic, IEnumerable<dynamic>> selector, string urlFormat, params object[] args)
+        {
+            var url = string.Format(urlFormat, args);
+            while (true)
             {
-                throw new Exception("Not verbose enough for me...");
-            }
-            var url = BaseUrl + string.Format(urlFormat, args);
-            if (urlsSeen.Contains(url))
-            {
-                Debug.WriteLine("DUPE URL! " + url);
-            }
-            else
-            {
-                urlsSeen.Add(url);
-            }
-            var request = (HttpWebRequest) WebRequest.Create(url);
-            request.Accept = "application/json";
-            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, request.Method));
-            Debug.WriteLine(url);
-            var response = (HttpWebResponse) request.GetResponse();
-            using (var reader = new StreamReader(response.GetResponseStream()))
-            {
-                var responseJson = reader.ReadToEnd();
-                //Debug.WriteLine(JsonHelper.FormatJson(responseJson));
-                return JsonConvert.DeserializeObject(responseJson);
+                dynamic result = GetJson(url);
+                foreach (var item in selector(result))
+                {
+                    yield return item;
+                }
+                if (result.Response.Pages == null || result.Response.Pages.NextPage == null)
+                {
+                    break;
+                }
+                url = (string)result.Response.Pages.NextPage + "&_verbosity=1";
             }
         }
 
         protected static dynamic PostJson(object postData, string urlFormat, params object[] args)
         {
+            return MakeRequest("POST", true, false, postData, urlFormat, args);
+        }
+
+        protected static dynamic PatchJson(object patchData, string urlFormat, params object[] args)
+        {
+            return MakeRequest("PATCH", false, false, patchData, urlFormat, args);
+        }
+
+        private static dynamic MakeRequest(string requestMethod, bool allowAutoRedirect, bool resubmitOnRedirect, object requestJson, string urlFormat, params object[] args)
+        {
             if (!urlFormat.Contains("_verbosity=1"))
             {
                 throw new Exception("Not verbose enough for me...");
@@ -68,17 +78,47 @@ namespace coynesolutions.treeupload.SmugMug
             Debug.WriteLine(url);
 
             var request = (HttpWebRequest) WebRequest.Create(url);
-            request.Method = "POST";
+            request.AllowAutoRedirect = allowAutoRedirect;
             request.Accept = "application/json";
-            request.ContentType = "application/json";
-            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, request.Method));
 
-            using (var writer = new StreamWriter(request.GetRequestStream()))
+            if (requestMethod != "GET")
             {
-                writer.Write(JsonConvert.SerializeObject(postData));
+                request.Method = requestMethod;
+                request.ContentType = "application/json";
+
+                using (var writer = new StreamWriter(request.GetRequestStream()))
+                {
+                    writer.Write(JsonConvert.SerializeObject(requestJson));
+                }
+            }
+            else
+            {
+                if (urlsSeen.Contains(url))
+                {
+                    Debug.WriteLine("DUPE GET URL: " + url);
+                }
+                else
+                {
+                    urlsSeen.Add(url);
+                }
             }
 
+            request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, request.Method));
+
+
             var response = (HttpWebResponse) request.GetResponse();
+
+            if(resubmitOnRedirect && (int)response.StatusCode >= 300 && (int)response.StatusCode < 400)
+            {
+                var location = response.GetResponseHeader("Location");
+                if (string.IsNullOrEmpty(location))
+                {
+                    return null;
+                }
+                //var newUrl = new Uri(new Uri(url), location).ToString(); // oops, I don't want/need it fully qualified
+                return MakeRequest(requestMethod, true, false, requestJson, location);
+            }
+
             using (var reader = new StreamReader(response.GetResponseStream()))
             {
                 var responseJson = reader.ReadToEnd();

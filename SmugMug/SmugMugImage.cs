@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace coynesolutions.treeupload.SmugMug
 {
@@ -10,7 +11,7 @@ namespace coynesolutions.treeupload.SmugMug
         public SmugMugImage(dynamic albumImageData)
         {
             this.albumImageData = albumImageData;
-            metadataJsonLazy = new Lazy<dynamic>(() => RequestJson(MetadataUri + "?_verbosity=1"));
+            metadataJsonLazy = new Lazy<dynamic>(() => GetJson(MetadataUri + "?_verbosity=1"));
         }
 
         public string FileName
