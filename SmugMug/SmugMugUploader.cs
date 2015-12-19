@@ -110,10 +110,10 @@ namespace coynesolutions.treeupload.SmugMug
             }
         }
 
+        private static readonly Regex badKeywordRegex = new Regex("^(HPIM)?\\d+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static bool IsBadKeyword(string keyword)
         {
-            var numericKeywordRegex = new Regex("^\\d+$");
-            if(numericKeywordRegex.IsMatch(keyword))
+            if(badKeywordRegex.IsMatch(keyword))
             {
                 int i;
                 if(int.TryParse(keyword, out i))
