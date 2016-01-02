@@ -15,9 +15,9 @@ namespace coynesolutions.treeupload
             Trace.Listeners.Add(new ConsoleTraceListener());
             Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
 
-            //Test();
+            Test();
             //TestSort();
-            KeywordTest();
+            //KeywordTest();
             Console.WriteLine("All done. Press a key to exit...");
             Console.ReadKey();
         }
@@ -58,7 +58,8 @@ namespace coynesolutions.treeupload
 
             var uploader = new SmugMugUploader();
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
-            var folderToUpload = Path.Combine(rootImagesFolder, "2015"); // upload only from this subdirectory of the rootImagesFolder
+            const string subdir = "2016"; // "2015";
+            var folderToUpload = Path.Combine(rootImagesFolder, subdir); // upload only from this subdirectory of the rootImagesFolder
             if (!folderToUpload.StartsWith(rootImagesFolder, StringComparison.InvariantCultureIgnoreCase))
             {
                 throw new Exception("Folder to upload must be under ImageFolder!");
@@ -135,25 +136,7 @@ namespace coynesolutions.treeupload
                     var relativeDirectory = directory.Substring(rootImagesFolder.Length).Trim('\\');
                     var parts = relativeDirectory.Split('\\');
 
-                    if (parts.Length > 0 && parts[0] == "Other People's Cameras")
-                    {
-                        parts[0] = "Other People"; // put them in there instead
-                    }
-                    if (!uploader.RootFolder.SubFolders.Any(f => f.Name == parts[0]))
-                    {
-                        // TODO: abstract out my silly folder logic and maybe make it customizable
-
-                        const string DefaultFolderName = "Other"; // move this to SmugMugUploader? Config setting
-                        if (!uploader.RootFolder.SubFolders.Any(f => f.Name == DefaultFolderName))
-                        {
-                            throw new Exception("Default folder name doesn't exist!");
-                            // Maybe I should just create it?
-                        }
-                        // Stick it under the default top-level folder
-                        var temp = new List<string>(parts);
-                        temp.Insert(0, "Other");
-                        parts = temp.ToArray();
-                    }
+                    TransformPath(uploader, ref parts);
 
                     var currentFolder = uploader.RootFolder;
                     for (var i = 0; i < parts.Length; i++)
@@ -247,15 +230,43 @@ namespace coynesolutions.treeupload
             postDirectoryCleanup();
         }
 
-        //private static string GetMd5(string file)
-        //{
-        //    using (var md5 = MD5.Create())
-        //    {
-        //        using (var stream = File.OpenRead(file))
-        //        {
-        //            return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-","").ToLower();
-        //        }
-        //    }
-        //}
+        private static void TransformPath(IUploader uploader, ref string[] directories)
+        {
+            // TODO: make this transform logic customizable somehow
+
+            if (directories.Length == 0)
+            {
+                return;
+            }
+            var firstPart = directories[0];
+
+            if (firstPart == "Other People's Cameras")
+            {
+                directories[0] = "Other People"; // put them in there instead
+            }
+            if (uploader.RootFolder.SubFolders.All(f => f.Name != firstPart))
+            {
+                // this file's top-level folder doesn't exist on smugmug.
+
+                int i;
+                if (int.TryParse(firstPart, out i) && 1999 <= i && i <= DateTime.Now.Year)
+                {
+                    // year directory... it's OK for it to create it
+                    return;
+                }
+
+                const string DefaultFolderName = "Other"; // move this to SmugMugUploader? Config setting
+                if (uploader.RootFolder.SubFolders.All(f => f.Name != DefaultFolderName))
+                {
+                    throw new Exception("Default folder name doesn't exist!");
+                    // Maybe I should just create it?
+                }
+
+                // Stick it under the default top-level folder
+                var temp = new List<string>(directories);
+                temp.Insert(0, DefaultFolderName);
+                directories = temp.ToArray();
+            }
+        }
     }
 }
