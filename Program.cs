@@ -10,16 +10,36 @@ namespace coynesolutions.treeupload
 {
     class Program
     {
+        private static string logFile;
+
         static void Main(string[] args)
         {
+            logFile = "treeupload.log.txt";
             Trace.Listeners.Add(new ConsoleTraceListener());
-            Trace.Listeners.Add(new TextWriterTraceListener("treeupload.log.txt"));
+            Trace.Listeners.Add(new TextWriterTraceListener(logFile));
 
-            Test();
-            //TestSort();
-            //KeywordTest();
+            SmugMugTest();
+            //SmugMugProgressTest();
+            //SmugMugTestSort();
             Console.WriteLine("All done. Press a key to exit...");
             Console.ReadKey();
+        }
+
+        private static void SmugMugProgressTest()
+        {
+            var uploader = new SmugMugUploader();
+            uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
+            var folder = uploader
+                .RootFolder
+                .SubFolders.Single(f => f.Name == "Test Junk")
+                .SubFolders.Single(f => f.Name == @"C:\Source\AdamCoyne\Stuff\picsdb\testfiles");
+            var file = @"\\server\shares\Photos\2016\20160101\IMG_5627.JPG";// @"\\server\shares\Photos\2015\20151231\MVI_5594.MP4";
+            if (folder.Upload(file))
+            {
+                var image = folder.Images.Cast<SmugMugImage>().Single(i => i.FileName.EndsWith(Path.GetFileName(file), StringComparison.InvariantCultureIgnoreCase));
+                // delete it!
+                image.Delete();
+            }
         }
 
         private static void KeywordTest()
@@ -29,7 +49,7 @@ namespace coynesolutions.treeupload
             uploader.RemoveBadKeywords();
         }
 
-        private static void TestSort()
+        private static void SmugMugTestSort()
         {
             //const string otherTempNodeUri = "/api/v2/node/PnHR2K";
             //var folder = SmugMugFolder.LoadFromNodeUri(otherTempNodeUri + "?_verbosity=1");
@@ -52,7 +72,7 @@ namespace coynesolutions.treeupload
             }
         }
 
-        private static void Test()
+        private static void SmugMugTest()
         {
             const bool dryRun = false; // TODO: make this apply to folder creation too... maybe make it a parameter
 

@@ -11,11 +11,22 @@ namespace coynesolutions.treeupload.SmugMug
 
         private Lazy<dynamic> authUserJsonLazy;
         private Lazy<IFolder> rootFolderLazy;
+        public event UploadProgressEventHandler UploadProgress;
 
         public SmugMugUploader()
         {
             authUserJsonLazy = new Lazy<dynamic>(() => GetJson("/api/v2!authuser?_filter=NickName%2CUri&_filteruri=Node&_verbosity=1"));
-            rootFolderLazy = new Lazy<IFolder>(() => SmugMugFolder.LoadFromNodeUri((string)AuthUserJson.Uris.Node + "?_verbosity=1"));
+            rootFolderLazy = new Lazy<IFolder>(() => SmugMugFolder.LoadFromNodeUri(this, (string)AuthUserJson.Uris.Node + "?_verbosity=1"));
+        }
+
+        public void RaiseUploadProgress(long bytesTransferred, long bytesTotal)
+        {
+            var args = new UploadProgressEventArgs(bytesTransferred, bytesTotal);
+            var e = UploadProgress;
+            if (e != null)
+            {
+                e(this, args);
+            }
         }
 
         public bool LogIn()

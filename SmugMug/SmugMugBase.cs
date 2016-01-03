@@ -67,6 +67,11 @@ namespace coynesolutions.treeupload.SmugMug
             return MakeRequest("PATCH", false, false, patchData, urlFormat, args);
         }
 
+        protected static dynamic DeleteJson(string urlFormat, params object[] args)
+        {
+            return MakeRequest("DELETE", false, false, null, urlFormat, args);
+        }
+
         private static dynamic MakeRequest(string requestMethod, bool allowAutoRedirect, bool resubmitOnRedirect, object requestJson, string urlFormat, params object[] args)
         {
             if (!urlFormat.Contains("_verbosity=1"))
@@ -81,9 +86,10 @@ namespace coynesolutions.treeupload.SmugMug
             request.AllowAutoRedirect = allowAutoRedirect;
             request.Accept = "application/json";
 
-            if (requestMethod != "GET")
+            request.Method = requestMethod;
+
+            if (requestJson != null)
             {
-                request.Method = requestMethod;
                 request.ContentType = "application/json";
 
                 using (var writer = new StreamWriter(request.GetRequestStream()))
@@ -91,7 +97,8 @@ namespace coynesolutions.treeupload.SmugMug
                     writer.Write(JsonConvert.SerializeObject(requestJson));
                 }
             }
-            else
+
+            if(requestMethod == "GET")
             {
                 if (urlsSeen.Contains(url))
                 {
@@ -131,7 +138,7 @@ namespace coynesolutions.treeupload.SmugMug
             get { return new[] {".jpg", ".jpeg", ".gif", ".png", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".mp4", ".flv"}; }
         }
 
-        public bool Upload(string file, SmugMugFolder folder)
+        protected bool Upload(string file, SmugMugFolder folder)
         {
             var albumUri = folder.AlbumUri;
             var fileInfo = new FileInfo(file);
@@ -160,8 +167,9 @@ namespace coynesolutions.treeupload.SmugMug
             {
                 using (var requestStream = request.GetRequestStream())
                 {
-                    fileStream.CopyTo(requestStream); // TODO: it would be cool to show progress here... time countdown and all
-                    requestStream.Close();
+                    //fileStream.CopyTo(requestStream); // TODO: it would be cool to show progress here... time countdown and all
+                    CopyStream(fileStream, requestStream, fileInfo.Length, folder.Uploader);
+                    //requestStream.Close(); // dispose should handle that
                 }
             }
 
@@ -184,6 +192,26 @@ namespace coynesolutions.treeupload.SmugMug
                     Debug.WriteLine(JsonHelper.FormatJson(responseJson));
                     return false;
                 }
+            }
+        }
+
+        
+
+        private void CopyStream(Stream fromStream, Stream toStream, long bytesTotal, SmugMugUploader uploader)
+        {
+            const int bufferSize = 81920; // good enough for Stream.CopyTo
+            var buffer = new byte[bufferSize];
+            long bytesTransferred = 0;
+            int count;
+            while ((count = fromStream.Read(buffer, 0, buffer.Length)) != 0)
+            {
+                toStream.Write(buffer, 0, count);
+                bytesTransferred += count;
+                if (bytesTransferred > bytesTotal)
+                {
+                    bytesTransferred = bytesTotal;
+                }
+                uploader.RaiseUploadProgress(bytesTransferred, bytesTotal);
             }
         }
 

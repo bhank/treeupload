@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Mime;
 using System.Text.RegularExpressions;
 
 namespace coynesolutions.treeupload.SmugMug
@@ -15,15 +14,24 @@ namespace coynesolutions.treeupload.SmugMug
         private Lazy<dynamic> imagesJsonLazy;
         private Lazy<IEnumerable<IFolder>> subfoldersLazy;
         private Lazy<IEnumerable<IImage>> imagesLazy;
+        internal SmugMugUploader Uploader;
 
-        private SmugMugFolder(dynamic folderData)
+        private SmugMugFolder(SmugMugUploader uploader, dynamic folderData)
         {
+            Uploader = uploader;
             nodeJson = folderData;
             Debug.WriteLine("new SmugMugFolder: " + ToString());
             albumJsonLazy = new Lazy<dynamic>(() => GetJson(AlbumUri + "?_verbosity=1"));
             ResetChildrenLazy();
             ResetImagesLazy();
         }
+
+        internal static SmugMugFolder LoadFromNodeUri(SmugMugUploader uploader, string nodeUri)
+        {
+            var nodeJson = GetJson(nodeUri).Response.Node;
+            return new SmugMugFolder(uploader, nodeJson);
+        }
+
 
         private void ResetChildrenLazy()
         {
@@ -34,7 +42,7 @@ namespace coynesolutions.treeupload.SmugMug
                 {
                     return Enumerable.Empty<IFolder>();
                 }
-                return ((IEnumerable<dynamic>) ChildrenJson).Select(d => new SmugMugFolder(d)).ToArray();
+                return ((IEnumerable<dynamic>) ChildrenJson).Select(d => new SmugMugFolder(Uploader, d)).ToArray();
             });
         }
 
@@ -56,11 +64,11 @@ namespace coynesolutions.treeupload.SmugMug
             });
         }
 
-        public static SmugMugFolder LoadFromNodeUri(string nodeUri)
-        {
-            var nodeJson = GetJson(nodeUri).Response.Node;
-            return new SmugMugFolder(nodeJson);
-        }
+        //public static SmugMugFolder LoadFromNodeUri(string nodeUri)
+        //{
+        //    var nodeJson = GetJson(nodeUri).Response.Node;
+        //    return new SmugMugFolder(nodeJson);
+        //}
 
         private dynamic ChildrenJson
         {
@@ -86,7 +94,19 @@ namespace coynesolutions.treeupload.SmugMug
         public string NodeID { get { return (string)nodeJson.NodeID; }  }
         public string ChildNodesUri { get { return GetUri(nodeJson.Uris.ChildNodes); } }
         public string AlbumUri { get { return GetUri(nodeJson.Uris.Album); } }
-        public string AlbumImagesUri { get { return GetUri(AlbumJson.Uris.AlbumImages); } }
+
+        public string AlbumImagesUri
+        {
+            get
+            {
+                //return (string)AlbumJson.Uris.AlbumImages; // oh, this is null on a newly-created album!
+                // because it's expanding the uri metadata, even though I put _verbosity=1 on the querystring.
+                // put it in the post data instead?
+                // just in case that doesn't work:
+                return GetUri(AlbumJson.Uris.AlbumImages);
+            }
+        }
+
         public string SortAlbumImagesUri { get { return GetUri(AlbumJson.Uris.SortAlbumImages); } }
 
 
@@ -112,6 +132,7 @@ namespace coynesolutions.treeupload.SmugMug
                 Name = name,
                 UrlName = name.Replace(" ", "-").Replace("\\", "-"), // TODO: remove all other url-unfriendly characters
                 Type = hasImages ? "Album" : "Folder",
+                _verbosity = 1, // can this go here? it isn't working in the querystring
             };
             var responseJson = PostJson(newFolderData, ChildNodesUri + "?_verbosity=1");
             if (responseJson.Message != "Created")
@@ -119,7 +140,7 @@ namespace coynesolutions.treeupload.SmugMug
                 throw new Exception("Unexpected response message: " + responseJson.Message);
             }
             ResetChildrenLazy(); // so subfolders will refresh when next accessed, and include this new folder
-            return new SmugMugFolder(responseJson.Response.Node);
+            return new SmugMugFolder(Uploader, responseJson.Response.Node);
         }
 
         private class ImageSortComparer : IComparer<IImage>

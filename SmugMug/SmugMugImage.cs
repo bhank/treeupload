@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace coynesolutions.treeupload.SmugMug
 {
@@ -60,6 +59,16 @@ namespace coynesolutions.treeupload.SmugMug
         public string Camera
         {
             get { return (string) MetadataJson.Camera; }
+        }
+
+        /// <summary>Delete image (removing it from all albums)</summary>
+        public void Delete()
+        {
+            var responseJson = DeleteJson(ImageUri + "?_verbosity=1");
+            if (responseJson.Code != 200 || responseJson.Message != "Ok")
+            {
+                throw new Exception("Unexpected response to image delete request: " + responseJson.Code + ", " + responseJson.Message);
+            }
         }
     }
 }

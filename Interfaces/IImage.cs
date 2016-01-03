@@ -9,5 +9,6 @@ namespace coynesolutions.treeupload.SmugMug
         DateTime? ExifDateTime { get; }
         string MD5 { get; }
         // exif, tags, size? hash?
+        void Delete();
     }
 }

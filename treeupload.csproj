@@ -58,6 +58,7 @@
     <Compile Include="SmugMug\SmugMugFolder.cs" />
     <Compile Include="SmugMug\SmugMugImage.cs" />
     <Compile Include="SmugMug\SmugMugUploader.cs" />
+    <Compile Include="UploadProgressEventArgs.cs" />
     <Compile Include="Tracing.cs" />
   </ItemGroup>
   <ItemGroup>
