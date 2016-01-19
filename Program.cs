@@ -77,6 +77,7 @@ namespace coynesolutions.treeupload
             const bool dryRun = false; // TODO: make this apply to folder creation too... maybe make it a parameter
 
             var uploader = new SmugMugUploader();
+            uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
             const string subdir = "2016"; // "2015";
             var folderToUpload = Path.Combine(rootImagesFolder, subdir); // upload only from this subdirectory of the rootImagesFolder
