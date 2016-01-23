@@ -138,13 +138,16 @@ namespace coynesolutions.treeupload.SmugMug
                 Name = name,
                 UrlName = urlName,
                 Type = hasImages ? "Album" : "Folder",
-                _verbosity = 1, // can this go here? it isn't working in the querystring
             };
             var responseJson = PostJson(newFolderData, ChildNodesUri + "?_verbosity=1");
             if (responseJson.Message != "Created")
             {
                 throw new Exception("Unexpected response message: " + responseJson.Message);
             }
+
+            // Customize new album settings
+            PatchJson(new {SquareThumbs = false}, GetUri(responseJson.Response.Node.Uris.Album) + "?_verbosity=1");
+
             ResetChildrenLazy(); // so subfolders will refresh when next accessed, and include this new folder
             return new SmugMugFolder(Uploader, responseJson.Response.Node);
         }
