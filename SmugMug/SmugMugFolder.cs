@@ -127,10 +127,16 @@ namespace coynesolutions.treeupload.SmugMug
 
         public IFolder CreateSubFolder(string name, bool hasImages)
         {
+            const int maxUrlNameLength = 30;
+            var urlName = name.Replace(" ", "-").Replace("\\", "-").Replace("'", "-"); // TODO: remove all other url-unfriendly characters
+            if (urlName.Length > maxUrlNameLength)
+            {
+                urlName = urlName.Substring(0, maxUrlNameLength/2 - 1) + "-" + urlName.Substring(urlName.Length - (maxUrlNameLength/2 - 1));
+            }
             var newFolderData = new
             {
                 Name = name,
-                UrlName = name.Replace(" ", "-").Replace("\\", "-"), // TODO: remove all other url-unfriendly characters
+                UrlName = urlName,
                 Type = hasImages ? "Album" : "Folder",
                 _verbosity = 1, // can this go here? it isn't working in the querystring
             };
