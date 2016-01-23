@@ -19,27 +19,9 @@ namespace coynesolutions.treeupload
             Trace.Listeners.Add(new TextWriterTraceListener(logFile));
 
             SmugMugTest();
-            //SmugMugProgressTest();
             //SmugMugTestSort();
             Console.WriteLine("All done. Press a key to exit...");
             Console.ReadKey();
-        }
-
-        private static void SmugMugProgressTest()
-        {
-            var uploader = new SmugMugUploader();
-            uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
-            var folder = uploader
-                .RootFolder
-                .SubFolders.Single(f => f.Name == "Test Junk")
-                .SubFolders.Single(f => f.Name == @"C:\Source\AdamCoyne\Stuff\picsdb\testfiles");
-            var file = @"\\server\shares\Photos\2016\20160101\IMG_5627.JPG";// @"\\server\shares\Photos\2015\20151231\MVI_5594.MP4";
-            if (folder.Upload(file))
-            {
-                var image = folder.Images.Cast<SmugMugImage>().Single(i => i.FileName.EndsWith(Path.GetFileName(file), StringComparison.InvariantCultureIgnoreCase));
-                // delete it!
-                image.Delete();
-            }
         }
 
         private static void KeywordTest()
@@ -261,13 +243,24 @@ namespace coynesolutions.treeupload
             }
             var firstPart = directories[0];
 
-            if (firstPart == "Other People's Cameras")
+            const string otherPeopleDiskDirectory = "Other People's Cameras";
+            const string otherPeopleSmugMugCategory = "Other People";
+
+            if (firstPart == otherPeopleDiskDirectory)
             {
-                directories[0] = "Other People"; // put them in there instead
+                directories[0] = otherPeopleSmugMugCategory; // put them in there instead
             }
-            if (uploader.RootFolder.SubFolders.All(f => f.Name != firstPart))
+            else if (uploader.RootFolder.SubFolders.All(f => f.Name != firstPart))
             {
                 // this file's top-level folder doesn't exist on smugmug.
+                var pathString = string.Join("\\", directories);
+                if (uploader.RootFolder.SubFolders.Single(f => f.Name == otherPeopleSmugMugCategory).SubFolders.Any(f => f.Name == firstPart || f.Name == pathString))
+                {
+                    var temp2 = new List<string>(directories);
+                    temp2.Insert(0, otherPeopleSmugMugCategory);
+                    directories = temp2.ToArray();
+                    return;
+                }
 
                 int i;
                 if (int.TryParse(firstPart, out i) && 1999 <= i && i <= DateTime.Now.Year)
