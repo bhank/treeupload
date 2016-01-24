@@ -51,8 +51,15 @@ namespace coynesolutions.treeupload.SmugMug
         {
             get
             {
-                //return MetadataJson.DateTime == null ? (DateTime?)null : (DateTime)MetadataJson.DateTime;
-                return (DateTime?) MetadataJson.DateTime;
+                foreach (var dateTimePropertyName in new[] {"DateDigitized", "DateTimeCreated", "DateCreated", "DateTimeModified", "DateTime"})
+                {
+                    var jsonValue = MetadataJson[dateTimePropertyName];
+                    if (jsonValue != null && jsonValue.Value is DateTime)
+                    {
+                        return (DateTime) jsonValue.Value;
+                    }
+                }
+                return null;
             }
         }
 
