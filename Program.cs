@@ -222,7 +222,7 @@ namespace coynesolutions.treeupload
                     else
                     {
                         Trace.WriteLine(string.Format("Uploading {0} to {1}", file, folder.Name));
-                        if (folder.Upload(file))
+                        if (UploadWithRetry(folder, file))
                         {
                             directoryNeedsSort = true;
                         }
@@ -231,6 +231,32 @@ namespace coynesolutions.treeupload
             }
 
             postDirectoryCleanup();
+        }
+
+        private static bool UploadWithRetry(IFolder folder, string file)
+        {
+            const int attempts = 3;
+            var attempt = 1;
+            while(true)
+            {
+                try
+                {
+                    return folder.Upload(file);
+                }
+                catch (Exception e)
+                {
+                    Trace.WriteLine("Upload failed: " + e.Message);
+                    if (attempt < attempts)
+                    {
+                        attempt++;
+                        Trace.WriteLine("Retrying...");
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
         }
 
         private static void TransformPath(IUploader uploader, ref string[] directories)
