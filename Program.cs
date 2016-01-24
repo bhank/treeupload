@@ -112,24 +112,6 @@ namespace coynesolutions.treeupload
                 var directory = Path.GetDirectoryName(file);
                 if (directory != lastDirectory)
                 {
-                    //// clean up from last directory
-                    //if (albumImages != null && albumImages.Count > 0)
-                    //{
-                    //    Trace.WriteLine("WARNING: Extra images in album " + folder.Name);
-                    //    foreach (var extra in albumImages.Keys)
-                    //    {
-                    //        Trace.WriteLine("\t" + extra);
-                    //    }
-                    //    albumImages.Clear(); // not really necessary since it's reassigned below, but no point in keeping this around
-                    //}
-
-                    //Trace.WriteLine("directoryNeedsSort? " + directoryNeedsSort);
-                    //if (directoryNeedsSort)
-                    //{
-                    //    // TODO: sort the modified album
-                    //    folder.Sort();
-                    //    directoryNeedsSort = false;
-                    //}
                     postDirectoryCleanup();
 
                     if (!directory.StartsWith(rootImagesFolder))
