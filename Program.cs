@@ -110,11 +110,11 @@ namespace coynesolutions.treeupload
                 }
                 Trace.WriteLine(file);
                 var directory = Path.GetDirectoryName(file);
-                if (directory != lastDirectory)
+                if(!directory.Equals(lastDirectory, StringComparison.InvariantCultureIgnoreCase))
                 {
                     postDirectoryCleanup();
 
-                    if (!directory.StartsWith(rootImagesFolder))
+                    if (!directory.StartsWith(rootImagesFolder, StringComparison.InvariantCultureIgnoreCase))
                     {
                         throw new Exception("Directory isn't in images folder?");
                     }
