@@ -134,7 +134,14 @@ namespace coynesolutions.treeupload
                         if (nextFolder == null)
                         {
                             // create new one inside folder?
-                            nextFolder = currentFolder.CreateSubFolder(relativeDirectory, true); // TODO: this is totally specific to my config... normally you might want to have node folders with just parts[i] for their names, and leaf albums with either parts[i] or relativeDirectory for their names
+                            var newFolderName = relativeDirectory;
+                            var folderContainsImages = true;
+                            if (i == 1 && parts[0] == OtherPeopleSmugMugCategory && parts.Length > 2)
+                            {
+                                newFolderName = parts[1];
+                                folderContainsImages = false;
+                            }
+                            nextFolder = currentFolder.CreateSubFolder(newFolderName, folderContainsImages); // TODO: this is totally specific to my config... normally you might want to have node folders with just parts[i] for their names, and leaf albums with either parts[i] or relativeDirectory for their names
                             // TODO: maybe have a few configurable options...
                             // my smugmug style, where it's always folder/category "tldname", album "tldname\dirname[\dirname]" (except one level deeper under "Other People"!)
                             // albums for directories containing images, otherwise folders
@@ -241,6 +248,7 @@ namespace coynesolutions.treeupload
             }
         }
 
+        private const string OtherPeopleSmugMugCategory = "Other People";
         private static void TransformPath(IUploader uploader, ref string[] directories)
         {
             // TODO: make this transform logic customizable somehow
@@ -251,21 +259,35 @@ namespace coynesolutions.treeupload
             }
             var firstPart = directories[0];
 
+            if (directories.Length == 1 && firstPart == "Other")
+            {
+                var temp2 = new List<string>(directories);
+                temp2.Insert(0, "Test Junk");
+                directories = temp2.ToArray();
+                return;
+            }
+            if (directories[0] == "MotoPhotoCD")
+            {
+                var temp2 = new List<string>(directories);
+                temp2.Insert(0, "2003");
+                directories = temp2.ToArray();
+                return;
+            }
+
             const string otherPeopleDiskDirectory = "Other People's Cameras";
-            const string otherPeopleSmugMugCategory = "Other People";
 
             if (firstPart == otherPeopleDiskDirectory)
             {
-                directories[0] = otherPeopleSmugMugCategory; // put them in there instead
+                directories[0] = OtherPeopleSmugMugCategory; // put them in there instead
             }
             else if (uploader.RootFolder.SubFolders.All(f => f.Name != firstPart))
             {
                 // this file's top-level folder doesn't exist on smugmug.
                 var pathString = string.Join("\\", directories);
-                if (uploader.RootFolder.SubFolders.Single(f => f.Name == otherPeopleSmugMugCategory).SubFolders.Any(f => f.Name == firstPart || f.Name == pathString))
+                if (uploader.RootFolder.SubFolders.Single(f => f.Name == OtherPeopleSmugMugCategory).SubFolders.Any(f => f.Name == firstPart || f.Name == pathString))
                 {
                     var temp2 = new List<string>(directories);
-                    temp2.Insert(0, otherPeopleSmugMugCategory);
+                    temp2.Insert(0, OtherPeopleSmugMugCategory);
                     directories = temp2.ToArray();
                     return;
                 }
