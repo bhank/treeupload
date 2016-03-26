@@ -9,7 +9,7 @@ namespace coynesolutions.treeupload.SmugMug
     public class SmugMugFolder : SmugMugBase, IFolder
     {
         private readonly dynamic nodeJson;
-        private Lazy<dynamic> childrenJsonLazy;
+        private Lazy<IEnumerable<dynamic>> childrenJsonLazy;
         private readonly Lazy<dynamic> albumJsonLazy;
         private Lazy<dynamic> imagesJsonLazy;
         private Lazy<IEnumerable<IFolder>> subfoldersLazy;
@@ -35,7 +35,7 @@ namespace coynesolutions.treeupload.SmugMug
 
         private void ResetChildrenLazy()
         {
-            childrenJsonLazy = new Lazy<dynamic>(() => GetJson(ChildNodesUri + "?_verbosity=1&count=100000"));
+            childrenJsonLazy = new Lazy<IEnumerable<dynamic>>(() => GetPagedItems(json => json.Response.Node, ChildNodesUri + "?_verbosity=1&count=100000"));
             subfoldersLazy = new Lazy<IEnumerable<IFolder>>(() =>
             {
                 if (!HasChildren)
@@ -72,7 +72,7 @@ namespace coynesolutions.treeupload.SmugMug
 
         private dynamic ChildrenJson
         {
-            get { return childrenJsonLazy.Value.Response.Node; }
+            get { return childrenJsonLazy.Value; }
         }
 
         private dynamic AlbumJson
@@ -146,7 +146,10 @@ namespace coynesolutions.treeupload.SmugMug
             }
 
             // Customize new album settings
-            PatchJson(new {SquareThumbs = false}, GetUri(responseJson.Response.Node.Uris.Album) + "?_verbosity=1");
+            if (hasImages)
+            {
+                PatchJson(new {SquareThumbs = false}, GetUri(responseJson.Response.Node.Uris.Album) + "?_verbosity=1");
+            }
 
             ResetChildrenLazy(); // so subfolders will refresh when next accessed, and include this new folder
             return new SmugMugFolder(Uploader, responseJson.Response.Node);
@@ -160,7 +163,7 @@ namespace coynesolutions.treeupload.SmugMug
                 get { return InstanceLazy.Value; }
             }
 
-            private static readonly Regex fileNumberRegex = new Regex(@"^(?:MVI_|IMG_|DSCN|P)(\d+)\.[A-Z0-9]{3}$", RegexOptions.Compiled);
+            private static readonly Regex fileNumberRegex = new Regex(@"^(?:MVI_|IMG_|DSCN|[Pf]|FILE)(\d+)\.[A-Za-z0-9]{3}$", RegexOptions.Compiled);
             public int Compare(IImage x, IImage y)
             {
                 var matchX = fileNumberRegex.Match(x.FileName);
@@ -240,7 +243,8 @@ namespace coynesolutions.treeupload.SmugMug
             ResetImagesLazy(); // reload list of images so it loads the new order from the server
             // maybe compare against that order to make sure it matches what I think it should be 
             currentOrderImagesWithIndexes = Images.Cast<SmugMugImage>().Select((image, index) => new {image, index}).ToList();
-            needsSort = currentOrderImagesWithIndexes.Any(c => sortedImages[c.index].ImageUri != c.image.ImageUri);
+            var imagesOutOfOrder = currentOrderImagesWithIndexes.Where(c => sortedImages[c.index].ImageUri != c.image.ImageUri).ToArray();
+            needsSort = imagesOutOfOrder.Any();
             if (needsSort)
             {
                 throw new Exception("Still needs sort after sorting!");
