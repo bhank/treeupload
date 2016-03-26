@@ -18,8 +18,8 @@ namespace coynesolutions.treeupload
             Trace.Listeners.Add(new ConsoleTraceListener());
             Trace.Listeners.Add(new TextWriterTraceListener(logFile));
 
-            SmugMugTest();
-            //SmugMugTestSort();
+            Upload<SmugMugUploader>();
+
             Console.WriteLine("All done. Press a key to exit...");
             Console.ReadKey();
         }
@@ -54,11 +54,11 @@ namespace coynesolutions.treeupload
             }
         }
 
-        private static void SmugMugTest()
+        private static void Upload<T>() where T : IUploader, new()
         {
             const bool dryRun = false; // TODO: make this apply to folder creation too... maybe make it a parameter
 
-            var uploader = new SmugMugUploader();
+            IUploader uploader = new T();
             uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
             const string subdir = "2016"; // "2015";
@@ -210,13 +210,13 @@ namespace coynesolutions.treeupload
                     }
                     else
                     {
-                        Trace.WriteLine(string.Format("Uploading {0} to {1}", file, folder.Name));
-                        if (UploadWithRetry(folder, file))
-                        {
-                            directoryNeedsSort = true;
-                        }
+                    Trace.WriteLine(string.Format("Uploading {0} to {1}", file, folder.Name));
+                    if (UploadWithRetry(folder, file))
+                    {
+                        directoryNeedsSort = true;
                     }
                 }
+            }
             }
 
             postDirectoryCleanup();
