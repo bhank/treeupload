@@ -24,6 +24,23 @@ namespace coynesolutions.treeupload
             Console.ReadKey();
         }
 
+        private static int dupeIndent;
+        private static void SmugMugDupeFoldersTest(IFolder folder = null)
+        {
+            folder = folder ?? new SmugMugUploader().RootFolder;
+            Trace.WriteLine(new string('\t', dupeIndent++) + folder.Name);
+            var subFolders = folder.SubFolders.ToArray();
+            foreach (var dupe in subFolders.GroupBy(f => f.Name, f => f).Where(g => g.Count() > 1).Select(g => new {Name = g.Key, Count = g.Count()}))
+            {
+                Trace.WriteLine(new string('\t', dupeIndent) + dupe.Name + ": " + dupe.Count);
+            }
+            foreach (var subFolder in subFolders)
+            {
+                SmugMugDupeFoldersTest(subFolder);
+            }
+            dupeIndent--;
+        }
+
         private static void KeywordTest()
         {
             var uploader = new SmugMugUploader();
@@ -44,7 +61,7 @@ namespace coynesolutions.treeupload
             IUploader uploader = new T();
             uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
-            const string subdir = "2016"; // "2015";
+            const string subdir = @"2016\20160323";
             var folderToUpload = Path.Combine(rootImagesFolder, subdir); // upload only from this subdirectory of the rootImagesFolder
             if (!folderToUpload.StartsWith(rootImagesFolder, StringComparison.InvariantCultureIgnoreCase))
             {
@@ -131,6 +148,7 @@ namespace coynesolutions.treeupload
                             // folders for all directories; extra albums (maybe with the full relativePath as their name) inside of those containing images
                         }
                         currentFolder = nextFolder;
+                        Trace.WriteLine(string.Format("Folder {0} has {1} subfolders", currentFolder.Name, currentFolder.SubFolders.Count()));
                         if (currentFolder.Name == relativeDirectory)
                         {
                             break;
