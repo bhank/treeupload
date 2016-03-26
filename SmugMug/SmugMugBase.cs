@@ -138,7 +138,7 @@ namespace coynesolutions.treeupload.SmugMug
             get { return new[] {".jpg", ".jpeg", ".gif", ".png", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".mp4", ".flv"}; }
         }
 
-        protected bool Upload(string file, SmugMugFolder folder)
+        protected static bool Upload(string file, SmugMugFolder folder)
         {
             var albumUri = folder.AlbumUri;
             var fileInfo = new FileInfo(file);
@@ -162,7 +162,7 @@ namespace coynesolutions.treeupload.SmugMug
             request.Headers.Add("X-Smug-FileName", fileInfo.Name);
 
             Debug.WriteLine("{0} - uploading {1} ({2} bytes)", UploadUrl, file, fileInfo.Length);
-
+            
             using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, 0x2000))
             {
                 using (var requestStream = request.GetRequestStream())
@@ -197,7 +197,7 @@ namespace coynesolutions.treeupload.SmugMug
 
         
 
-        private void CopyStream(Stream fromStream, Stream toStream, long bytesTotal, SmugMugUploader uploader)
+        private static void CopyStream(Stream fromStream, Stream toStream, long bytesTotal, SmugMugUploader uploader)
         {
             const int bufferSize = 81920; // good enough for Stream.CopyTo
             var buffer = new byte[bufferSize];
