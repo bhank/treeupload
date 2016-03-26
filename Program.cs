@@ -27,28 +27,13 @@ namespace coynesolutions.treeupload
         private static void KeywordTest()
         {
             var uploader = new SmugMugUploader();
-            //uploader.RemoveKeyword("zxcvbnm");
             uploader.RemoveBadKeywords();
         }
 
         private static void SmugMugTestSort()
         {
-            //const string otherTempNodeUri = "/api/v2/node/PnHR2K";
-            //var folder = SmugMugFolder.LoadFromNodeUri(otherTempNodeUri + "?_verbosity=1");
-            //Trace.WriteLine("------------- before ------------");
-            //foreach (var i in folder.Images)
-            //{
-            //    Debug.WriteLine(i.FileName);
-            //}
-            //folder.Sort();
-            //Trace.WriteLine("------------- after ------------");
-            //foreach (var i in folder.Images)
-            //{
-            //    Debug.WriteLine(i.FileName);
-            //}
             var u = new SmugMugUploader();
-            //u.RootFolder.SubFolders.Single(f => f.Name == "2015").SubFolders.Single(f => f.Name == "2015\\20151104").Sort();
-            foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2015").SubFolders.Where(f => f.Name.StartsWith("2015\\20151")))
+            foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2016").SubFolders.Where(f => f.Name.StartsWith("2016\\20160312")))
             {
                 folder.Sort();
             }
@@ -56,8 +41,6 @@ namespace coynesolutions.treeupload
 
         private static void Upload<T>() where T : IUploader, new()
         {
-            const bool dryRun = false; // TODO: make this apply to folder creation too... maybe make it a parameter
-
             IUploader uploader = new T();
             uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
@@ -174,14 +157,10 @@ namespace coynesolutions.treeupload
                     albumImages = imagesByFilename.ToDictionary(g => g.Key, g => g.First());
                 }
 
-                //var matchingImages = folder.Images.Where(i => i.FileName == Path.GetFileName(file)).ToArray();
-                //if (matchingImages.Length == 1)
                 IImage matchingImage;
                 if(albumImages.TryGetValue(Path.GetFileName(file), out matchingImage))
                 {
                     albumImages.Remove(Path.GetFileName(file));
-
-                    // I guess a filename-only match was good enough for me in my old uploader.
 
                     //// see if it matches the image on disk
                     //var fileInfo = new FileInfo(file);
@@ -202,21 +181,12 @@ namespace coynesolutions.treeupload
                 }
                 else
                 {
-                    // upload it?
-                    //uploader.Upload(file, folder);
-                    if (dryRun)
-                    {
-                        Trace.WriteLine(string.Format("DRY RUN: Would be uploading {0} to {1}", file, folder.Name));
-                    }
-                    else
-                    {
                     Trace.WriteLine(string.Format("Uploading {0} to {1}", file, folder.Name));
                     if (UploadWithRetry(folder, file))
                     {
                         directoryNeedsSort = true;
                     }
                 }
-            }
             }
 
             postDirectoryCleanup();
