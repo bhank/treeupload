@@ -153,6 +153,11 @@ namespace coynesolutions.treeupload.SmugMug
             //request.Method = "PUT"; // maybe? nope...
             request.Accept = "application/json";
             request.ContentLength = fileInfo.Length;
+            if (fileInfo.Length > 500000000)
+            {
+                request.AllowWriteStreamBuffering = false; // http://stackoverflow.com/questions/11640844/out-of-memory-exception-reading-large-text-file-for-httpwebrequest // https://support.microsoft.com/en-us/kb/908573
+                // without this, it would freeze forever on request.GetRequestStream() below on an 817 MB file
+            }
 
             request.ReadWriteTimeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds
             request.Timeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds
