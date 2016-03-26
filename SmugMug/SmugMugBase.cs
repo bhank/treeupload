@@ -142,6 +142,11 @@ namespace coynesolutions.treeupload.SmugMug
         {
             var albumUri = folder.AlbumUri;
             var fileInfo = new FileInfo(file);
+            if (fileInfo.Length == 0)
+            {
+                Debug.WriteLine("Zero-length file -- skipping");
+                return false;
+            }
 
             var request = (HttpWebRequest) WebRequest.Create(UploadUrl);
             request.Method = "POST";
