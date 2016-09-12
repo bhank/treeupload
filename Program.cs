@@ -18,7 +18,7 @@ namespace coynesolutions.treeupload
             Trace.Listeners.Add(new ConsoleTraceListener());
             Trace.Listeners.Add(new TextWriterTraceListener(logFile));
 
-            Upload<SmugMugUploader>();
+            Upload<SmugMugUploader>(args?.ElementAtOrDefault(0));
 
             Console.WriteLine("All done. Press a key to exit...");
             Console.ReadKey();
@@ -56,12 +56,11 @@ namespace coynesolutions.treeupload
             }
         }
 
-        private static void Upload<T>() where T : IUploader, new()
+        private static void Upload<T>(string subdir = "") where T : IUploader, new()
         {
             IUploader uploader = new T();
             uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
-            const string subdir = @"2016\20160323";
             var folderToUpload = Path.Combine(rootImagesFolder, subdir); // upload only from this subdirectory of the rootImagesFolder
             if (!folderToUpload.StartsWith(rootImagesFolder, StringComparison.InvariantCultureIgnoreCase))
             {
