@@ -171,7 +171,7 @@ namespace coynesolutions.treeupload.SmugMug
             request.Headers.Add("X-Smug-AlbumUri", albumUri);
             request.Headers.Add("X-Smug-FileName", fileInfo.Name);
 
-            Debug.WriteLine("{0} - uploading {1} ({2} bytes)", UploadUrl, file, fileInfo.Length);
+            Debug.WriteLine("{0} - uploading {1} ({2} bytes) starting at {3}", UploadUrl, file, fileInfo.Length, DateTime.Now);
             
             using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, 0x2000))
             {
@@ -183,9 +183,22 @@ namespace coynesolutions.treeupload.SmugMug
                 }
             }
 
-            Debug.WriteLine("Upload complete -- getting response");
+            Debug.WriteLine("Upload complete -- getting response at {0}", DateTime.Now);
 
-            var response = (HttpWebResponse) request.GetResponse();
+            HttpWebResponse response;
+            try
+            {
+                response = (HttpWebResponse)request.GetResponse();
+            }
+            catch(WebException e)
+            {
+                Debug.WriteLine("WebException at {0}", DateTime.Now);
+                Debug.WriteLine(request.RequestUri.ToString());
+                Debug.WriteLine(request.Headers.ToString());
+                Debug.WriteLine(e);
+                throw;
+            }
+
             using (var reader = new StreamReader(response.GetResponseStream()))
             {
                 var responseJson = reader.ReadToEnd();
