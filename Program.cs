@@ -57,12 +57,12 @@ namespace coynesolutions.treeupload
             }
         }
 
-        private static void Upload<T>(string subdir = "") where T : IUploader, new()
+        private static void Upload<T>(string subdir = null) where T : IUploader, new()
         {
             IUploader uploader = new T();
             uploader.UploadProgress += (sender, args) => Console.Write("\r" + args.FractionComplete.ToString("P"));
             var rootImagesFolder = ConfigurationManager.AppSettings["ImageFolder"]; // move that to uploader?
-            var folderToUpload = Path.Combine(rootImagesFolder, subdir); // upload only from this subdirectory of the rootImagesFolder
+            var folderToUpload = Path.Combine(rootImagesFolder, subdir ?? ""); // upload only from this subdirectory of the rootImagesFolder. The arg default is null rather than "", coalesced here, so it'll work if null is passed in.
             if (!folderToUpload.StartsWith(rootImagesFolder, StringComparison.InvariantCultureIgnoreCase))
             {
                 throw new Exception("Folder to upload must be under ImageFolder!");
