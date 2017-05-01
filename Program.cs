@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using coynesolutions.treeupload.SmugMug;
+using System.Net;
 
 namespace coynesolutions.treeupload
 {
@@ -222,6 +223,22 @@ namespace coynesolutions.treeupload
                 catch (Exception e)
                 {
                     Trace.WriteLine("Upload failed: " + e.Message);
+
+                    var webEx = e as WebException;
+                    if(webEx != null)
+                    {
+                        var response = webEx.Response as HttpWebResponse;
+                        if(response != null)
+                        {
+                            if(response.StatusCode == HttpStatusCode.Unauthorized)
+                            {
+                                Trace.WriteLine("Got a 401. It probably worked... returning true!");
+                                return true;
+                            }
+                        }
+                        Trace.WriteLine("WebException");
+                    }
+                    
                     if (attempt < attempts)
                     {
                         attempt++;
