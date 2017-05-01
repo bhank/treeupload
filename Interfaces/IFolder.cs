@@ -9,6 +9,6 @@ namespace coynesolutions.treeupload.SmugMug
         IEnumerable<IImage> Images { get; }
         bool Upload(string file);
         IFolder CreateSubFolder(string name, bool hasImages);
-        void Sort();
+        void Sort(bool reloadImageList = false);
     }
 }

@@ -187,9 +187,12 @@ namespace coynesolutions.treeupload.SmugMug
             }
         }
 
-        public void Sort()
+        public void Sort(bool resetImageList)
         {
-            ResetImagesLazy();
+            if (resetImageList)
+            {
+                ResetImagesLazy();
+            }
             var currentOrderImagesWithIndexes = Images.Cast<SmugMugImage>().Select((image, index) => new {image, index}).ToList();
             var sortedImages = Images.Cast<SmugMugImage>().OrderBy(i => i, ImageSortComparer.Instance).ToList();
             //var sortedImages = Images.Cast<SmugMugImage>().OrderBy(i => Guid.NewGuid()).ToList(); // random sort for testing

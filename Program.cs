@@ -73,7 +73,7 @@ namespace coynesolutions.treeupload
                 throw new Exception("Configured images folder does not exist: " + rootImagesFolder);
             }
             string lastDirectory = null;
-            var directoryNeedsSort = false;
+            var anyImagesUploaded = false;
             IFolder folder = null;
             Dictionary<string, IImage> albumImages = null;
 
@@ -82,23 +82,23 @@ namespace coynesolutions.treeupload
 // ReSharper disable AccessToModifiedClosure
             Action postDirectoryCleanup = () =>
             {
-                    // clean up from last directory
-                    if (albumImages != null && albumImages.Count > 0)
+                // clean up from last directory
+                if (albumImages != null && albumImages.Count > 0)
+                {
+                    Trace.WriteLine("WARNING: Extra images in album " + folder.Name);
+                    foreach (var extra in albumImages.Keys)
                     {
-                        Trace.WriteLine("WARNING: Extra images in album " + folder.Name);
-                        foreach (var extra in albumImages.Keys)
-                        {
-                            Trace.WriteLine("\t" + extra);
-                        }
-                        albumImages.Clear(); // not really necessary since it's reassigned below, but no point in keeping this around
+                        Trace.WriteLine("\t" + extra);
                     }
+                    albumImages.Clear(); // not really necessary since it's reassigned below, but no point in keeping this around
+                }
 
-                    Trace.WriteLine("directoryNeedsSort? " + directoryNeedsSort);
-                    if (directoryNeedsSort)
-                    {
-                        folder.Sort();
-                        directoryNeedsSort = false;
-                    }                
+                if (folder != null)
+                {
+                    Trace.WriteLine("anyImagesUploaded? " + anyImagesUploaded);
+                    folder.Sort(anyImagesUploaded);
+                    anyImagesUploaded = false;
+                }
             };
 // ReSharper restore AccessToModifiedClosure
 
@@ -202,7 +202,7 @@ namespace coynesolutions.treeupload
                     Trace.WriteLine(string.Format("Uploading {0} to {1}", file, folder.Name));
                     if (UploadWithRetry(folder, file))
                     {
-                        directoryNeedsSort = true;
+                        anyImagesUploaded = true;
                     }
                 }
             }
