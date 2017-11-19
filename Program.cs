@@ -99,7 +99,14 @@ namespace coynesolutions.treeupload
                 if (folder != null)
                 {
                     Trace.WriteLine("anyImagesUploaded? " + anyImagesUploaded);
-                    folder.Sort(anyImagesUploaded);
+                    try
+                    {
+                        folder.Sort(anyImagesUploaded);
+                    }
+                    catch(WebException e)
+                    {
+                        Console.WriteLine("Sort failed! " + e.Message);
+                    }
                     anyImagesUploaded = false;
                 }
             };
