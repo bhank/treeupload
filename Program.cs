@@ -19,6 +19,8 @@ namespace coynesolutions.treeupload
             Trace.Listeners.Add(new ConsoleTraceListener());
             Trace.Listeners.Add(new TextWriterTraceListener(logFile));
 
+            //SmugMugTestSort();
+
             Upload<SmugMugUploader>(args?.ElementAtOrDefault(0));
 
             Console.WriteLine("All done. Press a key to exit...");
@@ -51,7 +53,8 @@ namespace coynesolutions.treeupload
         private static void SmugMugTestSort()
         {
             var u = new SmugMugUploader();
-            foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2016").SubFolders.Where(f => f.Name.StartsWith("2016\\20160312")))
+            //foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2016").SubFolders.Where(f => f.Name.StartsWith("2016\\20160312")))
+            foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2017").SubFolders)
             {
                 folder.Sort();
             }
