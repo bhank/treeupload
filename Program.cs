@@ -136,7 +136,15 @@ namespace coynesolutions.treeupload
                     var currentFolder = uploader.RootFolder;
                     for (var i = 0; i < parts.Length; i++)
                     {
-                        var nextFolder = currentFolder.SubFolders.SingleOrDefault(f => f.Name == relativeDirectory);
+                        IFolder nextFolder = null;
+                        if (relativeDirectory != "Other")
+                        {
+                            nextFolder = currentFolder.SubFolders.SingleOrDefault(f => f.Name == relativeDirectory);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Not putting stuff in Other...");
+                        }
                         if (nextFolder == null)
                         {
                             nextFolder = currentFolder.SubFolders.SingleOrDefault(f => f.Name == parts[i] || f.Name == string.Join("\\", parts.Take(i + 1)));
