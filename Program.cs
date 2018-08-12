@@ -194,9 +194,9 @@ namespace coynesolutions.treeupload
                 }
 
                 IImage matchingImage;
-                if(albumImages.TryGetValue(Path.GetFileName(file), out matchingImage))
+                if(TryGetMatchingImage(albumImages, Path.GetFileName(file), out matchingImage))
                 {
-                    albumImages.Remove(Path.GetFileName(file));
+                    albumImages.Remove(matchingImage.FileName);
 
                     //// see if it matches the image on disk
                     //var fileInfo = new FileInfo(file);
@@ -226,6 +226,24 @@ namespace coynesolutions.treeupload
             }
 
             postDirectoryCleanup();
+        }
+
+        private static bool TryGetMatchingImage(Dictionary<string, IImage> albumImages, string file, out IImage matchingImage)
+        {
+            if(albumImages.TryGetValue(Path.GetFileName(file), out matchingImage))
+            {
+                return true;
+            }
+            if(file.Any(c => c > 256))
+            {
+                var fixedCharsFile = new string(file.Select(c => c > 256 ? (char)(c - 256) : c).ToArray());
+                if(albumImages.TryGetValue(Path.GetFileName(fixedCharsFile), out matchingImage))
+                {
+                    Trace.WriteLine("Compensated for dumb characters in filename being stripped by SmugMug");
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static bool UploadWithRetry(IFolder folder, string file)
