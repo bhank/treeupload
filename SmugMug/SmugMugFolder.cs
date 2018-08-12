@@ -10,7 +10,7 @@ namespace coynesolutions.treeupload.SmugMug
     {
         private readonly dynamic nodeJson;
         private Lazy<IEnumerable<dynamic>> childrenJsonLazy;
-        private readonly Lazy<dynamic> albumJsonLazy;
+        private Lazy<dynamic> albumJsonLazy;
         private Lazy<dynamic> imagesJsonLazy;
         private Lazy<IEnumerable<IFolder>> subfoldersLazy;
         private Lazy<IEnumerable<IImage>> imagesLazy;
@@ -21,7 +21,7 @@ namespace coynesolutions.treeupload.SmugMug
             Uploader = uploader;
             nodeJson = folderData;
             Debug.WriteLine("new SmugMugFolder: " + ToString());
-            albumJsonLazy = new Lazy<dynamic>(() => GetJson(AlbumUri + "?_verbosity=1"));
+            ResetAlbumLazy();
             ResetChildrenLazy();
             ResetImagesLazy();
         }
@@ -32,6 +32,10 @@ namespace coynesolutions.treeupload.SmugMug
             return new SmugMugFolder(uploader, nodeJson);
         }
 
+        private void ResetAlbumLazy()
+        {
+            albumJsonLazy = new Lazy<dynamic>(() => GetJson(AlbumUri + "?_verbosity=1"));
+        }
 
         private void ResetChildrenLazy()
         {
@@ -209,6 +213,20 @@ namespace coynesolutions.treeupload.SmugMug
             {
                 Trace.WriteLine("Already sorted.");
                 return;
+            }
+/*
+            //var debugUnsortedImages = currentOrderImagesWithIndexes.Where(c => sortedImages[c.index].ImageUri != c.image.ImageUri).ToArray();
+            for(var i = 0; i < sortedImages.Count; i++)
+            {
+                //Debug.WriteLine(currentOrderImagesWithIndexes[i].image.ImageUri + "\t" + sortedImages[i].ImageUri);
+                Debug.WriteLine(currentOrderImagesWithIndexes[i].image.FileName + "\t" + sortedImages[i].FileName);
+            }
+*/
+
+            if(AlbumJson.SortMethod != "Position")
+            {
+                PatchJson(new {SortMethod = "Position"}, AlbumUri + "?_verbosity=1");
+                ResetAlbumLazy();
             }
 
             //// TODO: go through and move images into order as necessary...
