@@ -17,7 +17,10 @@ namespace coynesolutions.treeupload
         {
             logFile = "treeupload.log.txt";
             Trace.Listeners.Add(new ConsoleTraceListener());
-            Trace.Listeners.Add(new TextWriterTraceListener(logFile));
+            if (ConfigurationManager.AppSettings["Log"] == "true")
+            {
+                Trace.Listeners.Add(new TextWriterTraceListener(logFile));
+            }
 
             //SmugMugTestSort();
 
