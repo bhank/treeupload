@@ -324,6 +324,10 @@ namespace coynesolutions.treeupload
                 directories = temp2.ToArray();
                 return;
             }
+            if(directories.Length == 3 && directories[0] == "Other People's Cameras" && directories[1] == "Mom" && directories[2] == "20080901")
+            {
+                directories = new[] { "2008", @"Other People's Cameras\Mom\20080901" };
+            }
 
             const string otherPeopleDiskDirectory = "Other People's Cameras";
 
