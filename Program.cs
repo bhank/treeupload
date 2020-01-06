@@ -243,6 +243,14 @@ namespace coynesolutions.treeupload
                     return true;
                 }
             }
+            if(Path.GetExtension(file).ToLowerInvariant() == ".heic")
+            {
+                var heicFilename = Path.GetFileNameWithoutExtension(file) + "_heic.JPG";
+                if(albumImages.TryGetValue(heicFilename, out matchingImage))
+                {
+                    return true;
+                }
+            }
             return false;
         }
 

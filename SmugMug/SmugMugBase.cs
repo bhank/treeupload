@@ -135,7 +135,7 @@ namespace coynesolutions.treeupload.SmugMug
 
         public IEnumerable<string> SupportedExtensions
         {
-            get { return new[] {".jpg", ".jpeg", ".gif", ".png", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".mp4", ".flv"}; }
+            get { return new[] {".jpg", ".jpeg", ".gif", ".png", ".avi", ".mov", ".wmv", ".mpg", ".mpeg", ".mp4", ".flv", ".heic"}; }
         }
 
         protected static bool Upload(string file, SmugMugFolder folder)
