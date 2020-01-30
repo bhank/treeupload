@@ -147,6 +147,12 @@ namespace coynesolutions.treeupload.SmugMug
                 Debug.WriteLine("Zero-length file -- skipping");
                 return false;
             }
+            const Int64 maximumSmugmugSize = 3L * 1024 * 1024 * 1024;
+            if(fileInfo.Length > maximumSmugmugSize)
+            {
+                Debug.WriteLine($"File too large for SmugMug ({fileInfo.Length} > {maximumSmugmugSize}) -- skipping");
+                return false;
+            }
 
             var request = (HttpWebRequest) WebRequest.Create(UploadUrl);
             request.Method = "POST";
