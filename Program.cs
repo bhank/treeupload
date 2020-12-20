@@ -198,7 +198,7 @@ namespace coynesolutions.treeupload
                         }
                     }
                     // make a list of filenames. we'll take out each one as we see it, and any left over are extra, in the album but not on disk.
-                    albumImages = imagesByFilename.ToDictionary(g => g.Key, g => g.First());
+                    albumImages = imagesByFilename.ToDictionary(g => g.Key, g => g.First(), StringComparer.InvariantCultureIgnoreCase);
                 }
 
                 IImage matchingImage;
