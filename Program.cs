@@ -12,6 +12,7 @@ namespace coynesolutions.treeupload
     class Program
     {
         private static string logFile;
+        private static HashSet<string> FilesToSkip = new HashSet<string>((ConfigurationManager.AppSettings["FilesToSkip"] ?? "").Split(new[] { ' ', ';', ',' }, StringSplitOptions.RemoveEmptyEntries), StringComparer.InvariantCultureIgnoreCase);
 
         static void Main(string[] args)
         {
@@ -118,6 +119,10 @@ namespace coynesolutions.treeupload
             foreach (var file in Directory.EnumerateFiles(folderToUpload, "*", SearchOption.AllDirectories))
             {
                 if (!uploader.SupportedExtensions.Contains(Path.GetExtension(file).ToLowerInvariant()))
+                {
+                    continue;
+                }
+                if(ShouldSkipFile(file))
                 {
                     continue;
                 }
@@ -366,6 +371,11 @@ namespace coynesolutions.treeupload
                 temp.Insert(0, DefaultFolderName);
                 directories = temp.ToArray();
             }
+        }
+
+        private static bool ShouldSkipFile(string filename)
+        {
+            return FilesToSkip.Contains(filename);
         }
     }
 }
