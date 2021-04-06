@@ -182,7 +182,6 @@ namespace coynesolutions.treeupload.SmugMug
                     }
                 }
 
-                DateTime dateTimeX, dateTimeY;
                 if (x.ExifDateTime.HasValue && y.ExifDateTime.HasValue)
                 {
                     return DateTime.Compare(x.ExifDateTime.Value, y.ExifDateTime.Value);
