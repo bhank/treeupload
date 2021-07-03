@@ -259,6 +259,11 @@ namespace coynesolutions.treeupload
                     return true;
                 }
             }
+            var mangledName = $"{Path.GetFileNameWithoutExtension(file)}_{Path.GetExtension(file).TrimStart('.')}{Path.GetExtension(file)}";
+            if (albumImages.TryGetValue(Path.GetFileName(mangledName), out matchingImage))
+            {
+                return true;
+            }
             return false;
         }
 
