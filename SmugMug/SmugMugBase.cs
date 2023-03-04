@@ -200,8 +200,24 @@ namespace coynesolutions.treeupload.SmugMug
             {
                 Debug.WriteLine("WebException at {0}", DateTime.Now);
                 Debug.WriteLine(request.RequestUri.ToString());
-                Debug.WriteLine(request.Headers.ToString());
+                Debug.WriteLine("Request headers: " + request.Headers.ToString());
                 Debug.WriteLine(e);
+                if (e.Response != null)
+                {
+                    Debug.WriteLine("Response headers: " + e.Response.Headers.ToString());
+                    try
+                    {
+                        using (var reader = new StreamReader(e.Response.GetResponseStream()))
+                        {
+                            var responseBody = reader.ReadToEnd();
+                            Debug.WriteLine("Error response body: " + responseBody);
+                        }
+                    }
+                    catch (Exception e2)
+                    {
+                        Debug.WriteLine("Failed to read response body: " + e2.Message);
+                    }
+                }
                 throw;
             }
 
