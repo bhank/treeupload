@@ -21,7 +21,7 @@ namespace coynesolutions.treeupload.SmugMug
         private const string UserAuthorizationUrl = "http://api.smugmug.com/services/oauth/1.0a/authorize";
         private const string AccessTokenUrl = "http://api.smugmug.com/services/oauth/1.0a/getAccessToken";
 
-        private const string UploadUrl = "http://upload.smugmug.com/";
+        private const string UploadUrl = "https://upload.smugmug.com/";
 
         private static readonly Manager OAuthManager = new Manager(ApiKey,ApiSecret,OAuthToken,OAuthSecret);
 
