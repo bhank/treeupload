@@ -283,5 +283,35 @@ namespace coynesolutions.treeupload.SmugMug
             }
             return value;
         }
+
+        protected static void GetOauthToken()
+        {
+            if (!string.IsNullOrEmpty(OAuthToken) || !string.IsNullOrEmpty(OAuthSecret))
+            {
+                Console.WriteLine("Old auth values are already present in config.");
+            }
+            if (string.IsNullOrEmpty(ApiKey))
+            {
+               throw new Exception("API key is not defined in config!");
+            }
+            if (string.IsNullOrEmpty(ApiSecret))
+            {
+               throw new Exception("API secret is not defined in config!");
+            }
+
+            var oauthManager = new OAuth.Manager(ApiKey, ApiSecret); // ,OAuthToken,OAuthSecret);
+            oauthManager.AcquireRequestToken(RequestTokenUrl, "POST");
+            var authorizationUrl = UserAuthorizationUrl + "?oauth_token=" + oauthManager["token"];
+            Console.WriteLine("Go to: " + authorizationUrl);
+            Console.WriteLine("Then type the six-digit PIN here: ");
+            var pin = Console.ReadLine();
+            var response = oauthManager.AcquireAccessToken(AccessTokenUrl, "POST", pin);
+            Console.WriteLine($@"
+	<add key=""SmugMug_OAuthToken"" value=""{response["oauth_token"]}""/>
+    < add key = ""SmugMug_OAuthSecret"" value = ""{response["oauth_token_secret"]}"" />
+");
+            Console.WriteLine("Add that to keys.config. Press enter to continue...");
+            Console.ReadLine();
+        }
     }
 }

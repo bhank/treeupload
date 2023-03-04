@@ -29,27 +29,10 @@ namespace coynesolutions.treeupload.SmugMug
             }
         }
 
-        public bool LogIn()
+        public static bool LogIn()
         {
-            // TODO: enable initial OAuth request and all
-
             throw new NotImplementedException();
-            //if (string.IsNullOrEmpty(ApiKey))
-            //{
-            //    throw new Exception("API key is not defined in config!");
-            //}
-            //if (string.IsNullOrEmpty(ApiSecret))
-            //{
-            //    throw new Exception("API secret is not defined in config!");
-            //}
-
-            //var oauthManager = new OAuth.Manager(ApiKey,ApiSecret,OAuthToken,OAuthSecret);
-            //if (string.IsNullOrEmpty(OAuthToken) || string.IsNullOrEmpty(OAuthSecret))
-            //{
-            //    // authorize!
-            //    var requestToken = oauthManager.AcquireRequestToken(RequestTokenUrl, "POST");
-            //    var url = oauthManager.GenerateCredsHeader("","",)
-            //}
+            //GetOauthToken();
         }
 
         public bool LogOut()
