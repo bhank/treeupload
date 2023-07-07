@@ -113,23 +113,24 @@ namespace coynesolutions.treeupload.SmugMug
             request.Headers.Add("Authorization", OAuthManager.GenerateAuthzHeader(url, request.Method));
 
 
-            var response = (HttpWebResponse) request.GetResponse();
-
-            if(resubmitOnRedirect && (int)response.StatusCode >= 300 && (int)response.StatusCode < 400)
+            using(var response = (HttpWebResponse) request.GetResponse())
             {
-                var location = response.GetResponseHeader("Location");
-                if (string.IsNullOrEmpty(location))
+                if(resubmitOnRedirect && (int)response.StatusCode >= 300 && (int)response.StatusCode < 400)
                 {
-                    return null;
+                    var location = response.GetResponseHeader("Location");
+                    if (string.IsNullOrEmpty(location))
+                    {
+                        return null;
+                    }
+                    //var newUrl = new Uri(new Uri(url), location).ToString(); // oops, I don't want/need it fully qualified
+                    return MakeRequest(requestMethod, true, false, requestJson, location);
                 }
-                //var newUrl = new Uri(new Uri(url), location).ToString(); // oops, I don't want/need it fully qualified
-                return MakeRequest(requestMethod, true, false, requestJson, location);
-            }
 
-            using (var reader = new StreamReader(response.GetResponseStream()))
-            {
-                var responseJson = reader.ReadToEnd();
-                return JsonConvert.DeserializeObject(responseJson);
+                using (var reader = new StreamReader(response.GetResponseStream()))
+                {
+                    var responseJson = reader.ReadToEnd();
+                    return JsonConvert.DeserializeObject(responseJson);
+                }
             }
         }
 
@@ -221,6 +222,7 @@ namespace coynesolutions.treeupload.SmugMug
                 throw;
             }
 
+            using(response)
             using (var reader = new StreamReader(response.GetResponseStream()))
             {
                 var responseJson = reader.ReadToEnd();
