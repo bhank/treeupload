@@ -160,13 +160,15 @@ namespace coynesolutions.treeupload.SmugMug
             //request.Method = "PUT"; // maybe? nope...
             request.Accept = "application/json";
             request.ContentLength = fileInfo.Length;
-            if (fileInfo.Length > 500000000)
-            {
-                request.AllowWriteStreamBuffering = false; // http://stackoverflow.com/questions/11640844/out-of-memory-exception-reading-large-text-file-for-httpwebrequest // https://support.microsoft.com/en-us/kb/908573
-                // without this, it would freeze forever on request.GetRequestStream() below on an 817 MB file
-            }
-
-            request.ReadWriteTimeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds
+            //if (fileInfo.Length > 500000000)
+            //{
+            //    request.AllowWriteStreamBuffering = false; // http://stackoverflow.com/questions/11640844/out-of-memory-exception-reading-large-text-file-for-httpwebrequest // https://support.microsoft.com/en-us/kb/908573
+            //    // without this, it would freeze forever on request.GetRequestStream() below on an 817 MB file
+            //}
+            // I'll always turn it off instead, and turn down ReadWriteTimeout: https://stackoverflow.com/a/38472486/2076576
+            request.AllowWriteStreamBuffering = false;
+            request.ReadWriteTimeout = 60000; // One minute; with AllowWriteStreamBuffering turned off, this should only time out if data stops being sent during the upload.
+            // Timeout applies to the entire upload process:
             request.Timeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds
             request.KeepAlive = false;
 
