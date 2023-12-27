@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography;
+using System.Threading;
 using Newtonsoft.Json;
 using OAuth;
 
@@ -168,8 +169,7 @@ namespace coynesolutions.treeupload.SmugMug
             // I'll always turn it off instead, and turn down ReadWriteTimeout: https://stackoverflow.com/a/38472486/2076576
             request.AllowWriteStreamBuffering = false;
             request.ReadWriteTimeout = 60000; // One minute; with AllowWriteStreamBuffering turned off, this should only time out if data stops being sent during the upload.
-            // Timeout applies to the entire upload process:
-            request.Timeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds
+            request.Timeout = 6 * 60 * 60 * 1000; // six hours, in milliseconds; this applies to the entire upload, so I can't use it to deal with the occasional hanging GetResponse calls on large videos.
             request.KeepAlive = false;
 
 
@@ -197,7 +197,13 @@ namespace coynesolutions.treeupload.SmugMug
             HttpWebResponse response;
             try
             {
-                response = (HttpWebResponse)request.GetResponse();
+                //response = (HttpWebResponse)request.GetResponse(); // I believe it is occasionally hanging on this line when uploading large videos.
+                using (var timeoutCts = new CancellationTokenSource(60_000)) // Make GetResponse stop after a minute. I probably don't need to dispose this; it only seems necessary for linked tokens.
+                {
+                    var task = request.GetResponseAsync().WithCancellation(timeoutCts.Token, request.Abort, true);
+                    task.Wait(); // ugh. I don't want to change everything upstream to async right now, though.
+                    response = (HttpWebResponse)task.Result;
+                }
             }
             catch(WebException e)
             {
