@@ -23,6 +23,8 @@ namespace coynesolutions.treeupload
                 Trace.Listeners.Add(new TextWriterTraceListener(logFile));
             }
 
+            //SmugMugDedupeImages(new SmugMugUploader().RootFolder.SubFolders.Single(f => f.Name == "2024").SubFolders.Single(f => f.Name == @"2024\20240601"));
+
             //SmugMugTestSort();
 
             Upload<SmugMugUploader>(args?.ElementAtOrDefault(0));
@@ -46,6 +48,24 @@ namespace coynesolutions.treeupload
                 SmugMugDupeFoldersTest(subFolder);
             }
             dupeIndent--;
+        }
+
+        private static void SmugMugDedupeImages(IFolder folder)
+        {
+            var imagesByFilename = folder.Images.GroupBy(i => i.FileName).ToArray();
+            var duplicateFilenames = imagesByFilename.Where(g => g.Count() > 1).ToArray();
+            if (duplicateFilenames.Any())
+            {
+                foreach(var duplicateFilename in duplicateFilenames)
+                {
+                    Console.WriteLine($"{duplicateFilename.Key}: will keep the first one and delete the other {duplicateFilename.Count() - 1}");
+                    foreach(var duplicateImage in duplicateFilename.Skip(1))
+                    {
+                        duplicateImage.Delete();
+                        Console.WriteLine("\tDeleted");
+                    }
+                }
+            }
         }
 
         private static void KeywordTest()
