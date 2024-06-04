@@ -7,6 +7,7 @@ namespace coynesolutions.treeupload.SmugMug
         string FileName { get; }
         long Size { get; }
         DateTime? ExifDateTime { get; }
+        string Model { get; }
         string MD5 { get; }
         // exif, tags, size? hash?
         void Delete();

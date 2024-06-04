@@ -68,6 +68,11 @@ namespace coynesolutions.treeupload.SmugMug
             get { return (string) MetadataJson.Camera; }
         }
 
+        public string Model
+        {
+            get { return (string)MetadataJson.Model; }
+        }
+
         /// <summary>Delete image (removing it from all albums)</summary>
         public void Delete()
         {

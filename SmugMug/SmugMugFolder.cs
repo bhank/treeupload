@@ -170,15 +170,19 @@ namespace coynesolutions.treeupload.SmugMug
             private static readonly Regex fileNumberRegex = new Regex(@"^(?:MVI_|IMG_|DSCN|[Pf]|FILE)(\d+)\.[A-Za-z0-9]{3}$", RegexOptions.Compiled);
             public int Compare(IImage x, IImage y)
             {
-                var matchX = fileNumberRegex.Match(x.FileName);
-                if (matchX.Success)
+                // I'll trust the timestamp on iPhones. Some of my older cameras weren't so trustworthy (I guess).
+                if (x.Model == null || !x.Model.Contains("iPhone"))
                 {
-                    var matchY = fileNumberRegex.Match(y.FileName);
-                    if (matchY.Success)
+                    var matchX = fileNumberRegex.Match(x.FileName);
+                    if (matchX.Success)
                     {
-                        var fileNumberX = int.Parse(matchX.Groups[1].Value);
-                        var fileNumberY = int.Parse(matchY.Groups[1].Value);
-                        return fileNumberX.CompareTo(fileNumberY);
+                        var matchY = fileNumberRegex.Match(y.FileName);
+                        if (matchY.Success)
+                        {
+                            var fileNumberX = int.Parse(matchX.Groups[1].Value);
+                            var fileNumberY = int.Parse(matchY.Groups[1].Value);
+                            return fileNumberX.CompareTo(fileNumberY);
+                        }
                     }
                 }
 
