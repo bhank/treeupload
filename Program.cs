@@ -311,12 +311,19 @@ namespace coynesolutions.treeupload
                     Trace.WriteLine("Upload failed: " + e.Message);
 
                     var webEx = e as WebException;
+                    if(webEx == null)
+                    {
+                        if (e is AggregateException aggEx)
+                        {
+                            Trace.WriteLine("AggregateException:" + string.Join("; ", aggEx.InnerExceptions.Select(ae => ae.Message)));
+                            webEx = aggEx.InnerExceptions.OfType<WebException>().FirstOrDefault();
+                        }
+                    }
                     if(webEx != null)
                     {
-                        var response = webEx.Response as HttpWebResponse;
-                        if(response != null)
+                        if (webEx.Response is HttpWebResponse response)
                         {
-                            if(response.StatusCode == HttpStatusCode.Unauthorized)
+                            if (response.StatusCode == HttpStatusCode.Unauthorized)
                             {
                                 Trace.WriteLine("Got a 401. It probably worked... returning true!");
                                 return true;
@@ -328,7 +335,7 @@ namespace coynesolutions.treeupload
                     if (attempt < attempts)
                     {
                         attempt++;
-                        Trace.WriteLine("Retrying...");
+                        Trace.WriteLine("Clearing cached list (if I can) and retrying...");
                     }
                     else
                     {
