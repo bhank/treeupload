@@ -306,6 +306,12 @@ namespace coynesolutions.treeupload
                 {
                     return folder.Upload(file);
                 }
+                catch (UploadResponseTimeoutException e)
+                {
+                    Trace.WriteLine("Upload response timed out: " + e);
+                    Trace.WriteLine("Continuing...");
+                    return true;
+                }
                 catch (Exception e)
                 {
                     Trace.WriteLine("Upload failed: " + e.Message);
@@ -315,7 +321,8 @@ namespace coynesolutions.treeupload
                     {
                         if (e is AggregateException aggEx)
                         {
-                            Trace.WriteLine("AggregateException:" + string.Join("; ", aggEx.InnerExceptions.Select(ae => ae.Message)));
+                            Trace.WriteLine("AggregateException: " + e);
+                            Trace.WriteLine("InnerExceptions: " + string.Join(Environment.NewLine, aggEx.InnerExceptions.Select(ae => ae.ToString())));
                             webEx = aggEx.InnerExceptions.OfType<WebException>().FirstOrDefault();
                         }
                     }
@@ -335,7 +342,8 @@ namespace coynesolutions.treeupload
                     if (attempt < attempts)
                     {
                         attempt++;
-                        Trace.WriteLine("Clearing cached list (if I can) and retrying...");
+                        //Trace.WriteLine("Clearing cached list (if I can) and retrying...");
+                        Trace.WriteLine("Retrying...");
                     }
                     else
                     {
