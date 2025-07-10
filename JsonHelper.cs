@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.Threading;
 
 class JsonHelper
 {
@@ -74,6 +76,30 @@ static class Extensions
         foreach (var i in ie)
         {
             action(i);
+        }
+    }
+
+    // https://stackoverflow.com/a/40029994
+    public static async Task<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken, Action action, bool useSynchronizationContext = false) // the SO code defaults that to true, but I don't think I need it since I'm not doing UI junk. We'll see.
+    {
+        using (cancellationToken.Register(action, useSynchronizationContext))
+        {
+            try
+            {
+                return await task;
+            }
+            catch (Exception ex)
+            {
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    // the Exception will be available as Exception.InnerException
+                    throw new OperationCanceledException(ex.Message, ex, cancellationToken);
+                }
+
+                // cancellation hasn't been requested, rethrow the original Exception
+                throw;
+            }
         }
     }
 }

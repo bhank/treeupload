@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using OAuth;
 
@@ -205,6 +208,19 @@ namespace coynesolutions.treeupload.SmugMug
                     response = (HttpWebResponse)task.Result;
                 }
             }
+            catch(TaskCanceledException e)
+            {
+                throw new UploadResponseTimeoutException("SmugMug upload response timed out.", e);
+            }
+            catch(AggregateException e)
+            {
+                var canceledException = e.InnerExceptions.OfType<TaskCanceledException>().FirstOrDefault();
+                if(canceledException != null)
+                {
+                    throw new UploadResponseTimeoutException("SmugMug upload response timed out.", e);
+                }
+                throw;
+            }
             catch(WebException e)
             {
                 Debug.WriteLine("WebException at {0}", DateTime.Now);
@@ -286,12 +302,15 @@ namespace coynesolutions.treeupload.SmugMug
             // Handle uris with or without metadata
             //return (string) (uriJson.Uri ?? uriJson);
             //return (string) (uriJson.HasValues ? uriJson.Uri : uriJson);
-            var value = uriJson.Value as string;
-            if (value == null)
-            {
-                value = uriJson.Uri.Value as string;
-            }
-            return value;
+            //var value = uriJson.Value as string;
+            //if (value == null)
+            //{
+            //    value = uriJson.Uri.Value as string;
+            //}
+            //return value;
+            //return uriJson == null ? null : uriJson.Value as string;
+            // Nah, just throw an error if it's null... we shouldn't be here if it is.
+            return uriJson.Value as string;
         }
 
         protected static void GetOauthToken()
