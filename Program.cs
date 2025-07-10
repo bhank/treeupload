@@ -23,7 +23,7 @@ namespace coynesolutions.treeupload
                 Trace.Listeners.Add(new TextWriterTraceListener(logFile));
             }
 
-            //SmugMugDedupeImages(new SmugMugUploader().RootFolder.SubFolders.Single(f => f.Name == "2024").SubFolders.Single(f => f.Name == @"2024\20240601"));
+            //SmugMugDedupeImages(new SmugMugUploader().RootFolder.SubFolders.Single(f => f.Name == "2024").SubFolders.Single(f => f.Name == @"2024\20240612"));
 
             //SmugMugTestSort();
 
@@ -78,7 +78,8 @@ namespace coynesolutions.treeupload
         {
             var u = new SmugMugUploader();
             //foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2016").SubFolders.Where(f => f.Name.StartsWith("2016\\20160312")))
-            foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2017").SubFolders)
+            //foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2017").SubFolders)
+            foreach (var folder in u.RootFolder.SubFolders.Single(f => f.Name == "2024").SubFolders.Where(f => f.Name.StartsWith("2024\\20240601")))
             {
                 folder.Sort();
             }
@@ -381,6 +382,10 @@ namespace coynesolutions.treeupload
             if(directories.Length == 3 && directories[0] == "Other People's Cameras" && directories[1] == "Mom" && directories[2] == "20080901")
             {
                 directories = new[] { "2008", @"Other People's Cameras\Mom\20080901" };
+            }
+            if(directories.Length == 2 && directories[0] == "Other People's Cameras" && directories[1] == "Cindy")
+            {
+                directories = new[] { directories[0], directories[1], @"Other People's Cameras\Cindy" };
             }
 
             const string otherPeopleDiskDirectory = "Other People's Cameras";
