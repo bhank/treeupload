@@ -170,8 +170,12 @@ namespace coynesolutions.treeupload.SmugMug
             private static readonly Regex fileNumberRegex = new Regex(@"^(?:MVI_|IMG_|DSCN|[Pf]|FILE)(\d+)\.[A-Za-z0-9]{3}$", RegexOptions.Compiled);
             public int Compare(IImage x, IImage y)
             {
+                var isIphone = x.Model != null && x.Model.Contains("iPhone");
+                var hasDates = x.ExifDateTime.HasValue && y.ExifDateTime.HasValue;
+                var hasWeirdKind = hasDates && (x.ExifDateTime.Value.Kind == DateTimeKind.Local || y.ExifDateTime.Value.Kind == DateTimeKind.Local); // MOV files taken in another time zone have Local and sort wrong
+
                 // I'll trust the timestamp on iPhones. Some of my older cameras weren't so trustworthy (I guess).
-                if (x.Model == null || !x.Model.Contains("iPhone"))
+                if (!isIphone || hasWeirdKind)
                 {
                     var matchX = fileNumberRegex.Match(x.FileName);
                     if (matchX.Success)
@@ -186,7 +190,7 @@ namespace coynesolutions.treeupload.SmugMug
                     }
                 }
 
-                if (x.ExifDateTime.HasValue && y.ExifDateTime.HasValue)
+                if (hasDates && !hasWeirdKind)
                 {
                     return DateTime.Compare(x.ExifDateTime.Value, y.ExifDateTime.Value);
                 }
@@ -210,8 +214,8 @@ namespace coynesolutions.treeupload.SmugMug
             //    Debug.WriteLine(i.FileName);
             //}
 
-
-            var needsSort = currentOrderImagesWithIndexes.Any(c => sortedImages[c.index].ImageUri != c.image.ImageUri);
+            var imagesOutOfOrder = currentOrderImagesWithIndexes.Where(c => sortedImages[c.index].ImageUri != c.image.ImageUri).ToArray(); // getting the list, for debugging purposes
+            var needsSort = imagesOutOfOrder.Any();
             if (!needsSort)
             {
                 Trace.WriteLine("Already sorted.");
@@ -267,7 +271,7 @@ namespace coynesolutions.treeupload.SmugMug
             ResetImagesLazy(); // reload list of images so it loads the new order from the server
             // maybe compare against that order to make sure it matches what I think it should be 
             currentOrderImagesWithIndexes = Images.Cast<SmugMugImage>().Select((image, index) => new {image, index}).ToList();
-            var imagesOutOfOrder = currentOrderImagesWithIndexes.Where(c => sortedImages[c.index].ImageUri != c.image.ImageUri).ToArray();
+            imagesOutOfOrder = currentOrderImagesWithIndexes.Where(c => sortedImages[c.index].ImageUri != c.image.ImageUri).ToArray();
             needsSort = imagesOutOfOrder.Any();
             if (needsSort)
             {
